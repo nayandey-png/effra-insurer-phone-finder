@@ -38,6 +38,10 @@
  *    needsVerification  true = we made an assumption. Listed in VERIFY.md.
  *    verifyNote         Short note on what needs checking (shown in ?debug=1).
  *
+ *  INSURER FIELDS (besides lines/questions/routes)
+ *    ctaUrl     (optional) Effra page for this insurer, used by the "See how →"
+ *               link. Without it, the link uses cta.defaultUrl.
+ *
  *  LINE FIELDS
  *    number     Exactly as it should be displayed.
  *    team       (optional) Team name shown under the number.
@@ -64,11 +68,13 @@ var IPF_DATA = {
   // Footer disclaimer (after the date).
   disclaimer: "Numbers and menu options can change. Not affiliated with these insurers.",
 
-  // The single Effra call to action on the result card.
+  // The single Effra call to action on the result card. The link goes to the
+  // insurer's own Effra page (`ctaUrl` on the insurer below) when there is one,
+  // otherwise to `defaultUrl`. Links open in the main page, not the iframe.
   cta: {
     text: "Effra handles insurer billing and chasing for 1000+ practitioners.",
     linkText: "See how →",
-    url: "https://www.effra.com/PLACEHOLDER" // TODO: replace with the real URL
+    defaultUrl: "https://www.effra.io/#how-it-works"
   },
 
   // Tip used on every "Something else" route that goes to a general number.
@@ -119,6 +125,7 @@ var IPF_DATA = {
     {
       id: "aviva",
       name: "Aviva",
+      ctaUrl: "https://www.effra.io/integrations/insurers/aviva-automated-billing-for-healthcare-providers",
       initials: "Av",
       lines: {
         invoicing: { number: "0800 015 0107",
@@ -144,6 +151,7 @@ var IPF_DATA = {
     {
       id: "axa",
       name: "AXA",
+      ctaUrl: "https://www.effra.io/integrations/insurers/axa-automated-billing-for-healthcare-providers",
       initials: "AXA",
       lines: {
         general: {
@@ -281,6 +289,7 @@ var IPF_DATA = {
     {
       id: "bupa",
       name: "Bupa",
+      ctaUrl: "https://www.effra.io/integrations/insurers/bupa-automated-billing-for-healthcare-providers",
       initials: "Bu",
       lines: {
         provider: { number: "0345 755 3333", team: "Provider Services Team",
@@ -389,6 +398,7 @@ var IPF_DATA = {
     {
       id: "healix",
       name: "Healix Health",
+      ctaUrl: "https://www.effra.io/integrations/insurers/healix-automated-billing-for-healthcare-providers",
       initials: "He",
       lines: {
         main: { number: "020 3376 3907",
@@ -411,6 +421,7 @@ var IPF_DATA = {
     {
       id: "vitality",
       name: "Vitality",
+      ctaUrl: "https://www.effra.io/integrations/insurers/vitality-automated-billing-for-healthcare-providers",
       initials: "Vi",
       lines: {
         main: { number: "0800 092 9400",
@@ -437,6 +448,7 @@ var IPF_DATA = {
     {
       id: "wpa",
       name: "WPA",
+      ctaUrl: "https://www.effra.io/integrations/insurers/wpa-automated-billing-for-healthcare-providers",
       initials: "WPA",
       lines: {
         billing: { number: "01823 625278", team: "Billing & payment queries", hours: null },

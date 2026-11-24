@@ -178,6 +178,7 @@
     });
     return {
       routeId: route.id,
+      ctaUrl: insurer.ctaUrl || DATA.cta.defaultUrl,
       insurerId: insurer.id,
       insurerName: insurer.name,
       main: main,

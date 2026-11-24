@@ -56,10 +56,19 @@ function loadLogos(data) {
   return { logos: logos, missing: missing };
 }
 
+// Replace url("assets/fonts/<file>.woff2") in the CSS with a data URI.
+function inlineFonts(html) {
+  return html.replace(/url\("(assets\/fonts\/[A-Za-z0-9._-]+\.woff2)"\)/g, function (_, rel) {
+    var file = path.join(ROOT, rel);
+    if (!fs.existsSync(file)) throw new Error("Font file missing: " + rel);
+    return 'url("data:font/woff2;base64,' + fs.readFileSync(file).toString("base64") + '")';
+  });
+}
+
 // ----------------------------------------------------------------- page
 function buildPage() {
   var E = freshEngine();
-  var html = stripDebug(read("index.html"));
+  var html = inlineFonts(stripDebug(read("index.html")));
   var logoInfo = loadLogos(E.DATA);
   var boot = "window.__IPF_LOGOS__ = " + JSON.stringify(logoInfo.logos) + ";\n" +
              "window.__IPF_INITIAL_QUERY__ = \"__IPF_INITIAL_QUERY__\";";

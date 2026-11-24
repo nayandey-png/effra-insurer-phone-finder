@@ -8,7 +8,8 @@ It's a public Effra web asset, embedded in the Framer site in the same way as th
 index.html          The tool (markup, CSS, UI). Open it directly in a browser.
 src/data.js         ★ ALL insurer data: numbers, menus, hours, tips, Last checked date.
 src/engine.js       Routing logic (no data, no DOM).
-assets/logos/       Insurer logos (you supply these; see below).
+assets/logos/       Insurer logos (see below).
+assets/fonts/       Manrope web font + licence (see "Fonts").
 build.js            Builds everything in dist/ from the files above.
 test/               npm test: walks every path, checks the table and CSV.
 VERIFY.md           Every assumption to confirm with the billing team.
@@ -59,7 +60,7 @@ To check the whole tree, open **`index.html?debug=1`**. It lists every insurer �
 Edit `lastChecked` near the top of `src/data.js` (e.g. `"February 2027"`) and rebuild. The same value is used in the tool's footer, the table and the CSV.
 
 ### The Effra link
-Edit `cta.url` in `src/data.js` (currently a placeholder).
+The "See how →" link on each result goes to that insurer's Effra page, set by `ctaUrl` on the insurer in `src/data.js`. Bupa, AXA, Aviva, Vitality, WPA and Healix have their own pages. Insurers without a `ctaUrl` (Allianz, Cigna, AXA Global, Bupa Global) use `cta.defaultUrl` (`https://www.effra.io/#how-it-works`). Links open with `target="_top"`, so they navigate the Effra page itself, not the inside of the iframe.
 
 ## Logos
 Logos live in `assets/logos/`, named by insurer id. All 10 are in place as PNGs:
@@ -88,7 +89,28 @@ The build inlines them as data URIs, so the Framer component stays self-containe
 Logos are shown in a 3:2 box: 60 × 40 px on the insurer buttons and 36 × 24 px in the small header chip.
 
 ## Brand styling
-The brand tokens are CSS custom properties at the top of `index.html` (`:root { --ipf-… }`): font, radius, colours and focus ring. They're neutral placeholders, so swap in Effra's values and rebuild. If you change colours, keep text contrast at 4.5:1 or better.
+The brand tokens are CSS custom properties at the top of `index.html` (`:root { --ipf-… }`). They hold Effra's values, read from www.effra.io:
+
+| Token | Value | Used for |
+|---|---|---|
+| `--ipf-primary` | `#14150d` | buttons, phone number, menu steps (white text on it) |
+| `--ipf-text` | `#14150d` | body text |
+| `--ipf-muted` | `#515358` | secondary text |
+| `--ipf-bg` / `--ipf-surface` | `#ffffff` / `#f7f8f9` | page / result cards |
+| `--ipf-border` / `--ipf-border-strong` | `#edeff0` / `#868990` | dividers / option tiles, inputs, outline buttons |
+| `--ipf-radius-btn` / `--ipf-radius` | `99px` / `8px` | buttons / cards and option tiles |
+| `--ipf-font` | Manrope, then the system font stack | everything (body text weight 500, as on effra.io) |
+
+**Contrast is checked by `npm test`** (`test/contrast.test.js`):
+- Text and button labels must reach **4.5:1**.
+- The strong border and the focus ring must reach **3:1**.
+
+If you change a colour and a pair fails, the test names the pair. The site's own border colour (`#edeff0`) is too faint to outline a tappable tile, which is why option tiles use the darker `--ipf-border-strong`.
+
+## Fonts
+The tool uses **Manrope** (Latin subset, weights 500, 600 and 700, WOFF2) from [`@fontsource/manrope`](https://fontsource.org/fonts/manrope) 5.3.0. The files are in `assets/fonts/`, and the build embeds them in the page, so the Framer component makes no font requests.
+
+Manrope is © The Manrope Project Authors and is used under the **SIL Open Font License 1.1**; the full licence is in `assets/fonts/OFL.txt`.
 
 ## Adding the tool to Framer
 1. Run `npm run build`.

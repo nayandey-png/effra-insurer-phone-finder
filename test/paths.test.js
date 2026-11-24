@@ -291,6 +291,29 @@ test("every insurer has a logo file, and the build inlines them all", function (
   Object.keys(logos).forEach(function (k) { assert.match(logos[k], /^data:image\/(png|svg\+xml);base64,/); });
 });
 
+test("CTA link: per-insurer Effra page, otherwise the default, opening in the top window", function () {
+  var withPage = { aviva: 1, axa: 1, bupa: 1, healix: 1, vitality: 1, wpa: 1 };
+  paths.forEach(function (p) {
+    var r = p.step.result, id = r.insurerId;
+    var expected = withPage[id]
+      ? "https://www.effra.io/integrations/insurers/" + id + "-automated-billing-for-healthcare-providers"
+      : D.cta.defaultUrl;
+    assert.equal(r.ctaUrl, expected, id);
+  });
+  assert.equal(D.cta.defaultUrl, "https://www.effra.io/#how-it-works");
+  assert.match(out.page, /href: r\.ctaUrl, target: "_top"/);
+});
+
+test("Manrope 500/600/700 is embedded, with its licence", function () {
+  var fs = require("fs"), path = require("path");
+  ["500", "600", "700"].forEach(function (w) {
+    assert.ok(fs.existsSync(path.join(__dirname, "..", "assets", "fonts", "manrope-latin-" + w + "-normal.woff2")));
+  });
+  assert.equal((out.page.match(/url\("data:font\/woff2;base64,/g) || []).length, 3);
+  assert.ok(!/url\("assets\/fonts/.test(out.page), "font not inlined");
+  assert.ok(/SIL Open Font License/.test(fs.readFileSync(path.join(__dirname, "..", "assets", "fonts", "OFL.txt"), "utf8")));
+});
+
 test("built page is self-contained and has no debug view", function () {
   var page = out.page;
   assert.ok(!/DEBUG:|ipf-debug|debugView/.test(page), "debug code leaked into build");

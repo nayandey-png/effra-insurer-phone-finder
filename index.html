@@ -6,32 +6,44 @@
 <title>Insurer phone finder</title>
 <style>
 /* ==========================================================================
-   BRAND TOKENS: replace these placeholders with Effra's values.
+   FONT: Manrope (Latin, 500/600/700) from @fontsource/manrope 5.3.0,
+   SIL Open Font License 1.1 (assets/fonts/OFL.txt). build.js inlines these
+   files as data URIs so the Framer component makes no network requests.
+   ========================================================================== */
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 500; font-display: swap; src: url("assets/fonts/manrope-latin-500-normal.woff2") format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 600; font-display: swap; src: url("assets/fonts/manrope-latin-600-normal.woff2") format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 700; font-display: swap; src: url("assets/fonts/manrope-latin-700-normal.woff2") format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
+/* ==========================================================================
+   BRAND TOKENS: Effra values, read from www.effra.io (Nov 2026).
+   npm test checks text contrast ≥ 4.5:1 and the strong border ≥ 3:1.
    ========================================================================== */
 :root {
-  --ipf-font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --ipf-radius: 12px;          /* cards and buttons */
-  --ipf-radius-sm: 8px;        /* chips, small elements */
+  --ipf-font: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --ipf-radius-btn: 99px;      /* buttons (pill, as on effra.io) */
+  --ipf-radius: 8px;           /* cards, option tiles, inputs */
+  --ipf-radius-sm: 6px;        /* logo box, menu chips */
 
   --ipf-bg: #ffffff;           /* page background */
-  --ipf-surface: #f5f6f8;      /* cards, panels */
-  --ipf-text: #1b1f24;         /* body text */
-  --ipf-muted: #545c66;        /* secondary text (≥ 4.5:1 on bg and surface) */
-  --ipf-border: #d3d8de;
-  --ipf-primary: #2a4767;      /* buttons, number, progress */
+  --ipf-surface: #f7f8f9;      /* cards, panels */
+  --ipf-text: #14150d;         /* body text (Effra ink) */
+  --ipf-muted: #515358;        /* secondary text */
+  --ipf-border: #edeff0;       /* light dividers and card outlines */
+  --ipf-border-strong: #868990;/* option tiles, inputs, outline buttons (≥ 3:1 on bg) */
+  --ipf-primary: #14150d;      /* buttons, number, progress */
+  --ipf-primary-hover: #2b2c25;/* primary button hover */
   --ipf-primary-text: #ffffff; /* text on primary */
-  --ipf-primary-soft: #e7edf4; /* hover / selected tint */
-  --ipf-focus: #1458b8;        /* focus ring */
+  --ipf-primary-soft: #f1f2f3; /* hover tint, compact chips, initials */
+  --ipf-focus: #14150d;        /* focus ring */
 
   --ipf-open: #146234;   --ipf-open-bg: #e2f3e8;
   --ipf-closed: #8c1d1d; --ipf-closed-bg: #fbe8e8;
-  --ipf-unknown: #545c66; --ipf-unknown-bg: #eceef1;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; padding: 0; }
-body { background: var(--ipf-bg); color: var(--ipf-text); font-family: var(--ipf-font); font-size: 16px; line-height: 1.45; -webkit-text-size-adjust: 100%; }
+body { background: var(--ipf-bg); color: var(--ipf-text); font-family: var(--ipf-font); font-weight: 500; font-size: 16px; line-height: 1.45; -webkit-text-size-adjust: 100%; }
 .ipf { max-width: 640px; margin: 0 auto; padding: 16px; }
 .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
@@ -41,7 +53,7 @@ button { cursor: pointer; }
 
 /* Top bar: back + progress */
 .ipf-top { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; min-height: 40px; }
-.ipf-back { background: none; border: 1px solid var(--ipf-border); border-radius: var(--ipf-radius-sm); padding: 8px 12px; min-height: 40px; }
+.ipf-back { background: none; border: 1px solid var(--ipf-border-strong); border-radius: var(--ipf-radius-btn); padding: 8px 12px; min-height: 40px; }
 .ipf-back:hover:not(:disabled) { background: var(--ipf-surface); }
 .ipf-back:disabled { opacity: .45; cursor: default; }
 .ipf-progress { flex: 1; height: 6px; border-radius: 3px; background: var(--ipf-surface); overflow: hidden; border: 1px solid var(--ipf-border); }
@@ -67,13 +79,13 @@ h1, h2, h3 { line-height: 1.25; margin: 0; }
 /* Filter */
 .ipf-filter { display: block; margin: 0 0 14px; }
 .ipf-filter label { display: block; font-size: .9rem; color: var(--ipf-muted); margin-bottom: 4px; }
-.ipf-filter input { width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid var(--ipf-border); border-radius: var(--ipf-radius); background: var(--ipf-bg); }
+.ipf-filter input { width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid var(--ipf-border-strong); border-radius: var(--ipf-radius); background: var(--ipf-bg); }
 .ipf-empty { color: var(--ipf-muted); padding: 12px 0; }
 
 /* Option buttons */
 .ipf-options { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 @media (min-width: 480px) { .ipf-options.is-grid { grid-template-columns: 1fr 1fr; } }
-.ipf-option { width: 100%; min-height: 60px; display: flex; align-items: center; gap: 12px; text-align: left; padding: 12px 16px; background: var(--ipf-bg); border: 1px solid var(--ipf-border); border-radius: var(--ipf-radius); transition: background .15s, border-color .15s; }
+.ipf-option { width: 100%; min-height: 60px; display: flex; align-items: center; gap: 12px; text-align: left; padding: 12px 16px; background: var(--ipf-bg); border: 1px solid var(--ipf-border-strong); border-radius: var(--ipf-radius); transition: background .15s, border-color .15s; }
 .ipf-option:hover { background: var(--ipf-primary-soft); border-color: var(--ipf-primary); }
 .ipf-option:active { transform: translateY(1px); }
 .ipf-option-text { display: flex; flex-direction: column; gap: 2px; }
@@ -88,7 +100,7 @@ h1, h2, h3 { line-height: 1.25; margin: 0; }
 .ipf-number-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 2px 0 14px; }
 .ipf-number { font-size: clamp(1.7rem, 7.5vw, 2.3rem); font-weight: 700; color: var(--ipf-primary); text-decoration: none; letter-spacing: .01em; font-variant-numeric: tabular-nums; }
 .ipf-number:hover { text-decoration: underline; }
-.ipf-copy { border: 1px solid var(--ipf-primary); background: var(--ipf-bg); color: var(--ipf-primary); border-radius: var(--ipf-radius-sm); padding: 6px 14px; min-height: 40px; font-weight: 600; }
+.ipf-copy { border: 1px solid var(--ipf-primary); background: var(--ipf-bg); color: var(--ipf-primary); border-radius: var(--ipf-radius-btn); padding: 6px 16px; min-height: 40px; font-weight: 600; }
 .ipf-copy:hover { background: var(--ipf-primary-soft); }
 .ipf-section { margin-top: 14px; }
 .ipf-section p { margin: 0; }
@@ -105,7 +117,7 @@ h1, h2, h3 { line-height: 1.25; margin: 0; }
 .ipf-others > summary::after { content: ""; position: absolute; right: 18px; top: 50%; width: 8px; height: 8px; border-right: 2px solid var(--ipf-muted); border-bottom: 2px solid var(--ipf-muted); transform: translateY(-70%) rotate(45deg); }
 .ipf-others[open] > summary::after { transform: translateY(-30%) rotate(-135deg); }
 .ipf-others > summary:focus-visible { outline-offset: -3px; border-radius: var(--ipf-radius); }
-.ipf-others .ipf-note { font-weight: 400; }
+.ipf-others .ipf-note { font-weight: 500; }
 .ipf-others-list { list-style: none; margin: 0; padding: 0 16px 6px; }
 .ipf-other { padding: 12px 0; border-top: 1px solid var(--ipf-border); font-size: .92rem; }
 .ipf-other-label { margin: 0 0 2px; color: var(--ipf-muted); }
@@ -125,10 +137,10 @@ h1, h2, h3 { line-height: 1.25; margin: 0; }
 .ipf-list li + li { margin-top: 4px; }
 
 .ipf-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
-.ipf-btn { min-height: 48px; padding: 10px 18px; border-radius: var(--ipf-radius); border: 1px solid var(--ipf-border); background: var(--ipf-bg); font-weight: 600; }
+.ipf-btn { min-height: 48px; padding: 10px 22px; border-radius: var(--ipf-radius-btn); border: 1px solid var(--ipf-border-strong); background: var(--ipf-bg); font-weight: 600; }
 .ipf-btn:hover { background: var(--ipf-surface); }
 .ipf-btn.is-primary { background: var(--ipf-primary); color: var(--ipf-primary-text); border-color: var(--ipf-primary); }
-.ipf-btn.is-primary:hover { filter: brightness(1.12); }
+.ipf-btn.is-primary:hover { background: var(--ipf-primary-hover); border-color: var(--ipf-primary-hover); }
 
 .ipf-cta { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--ipf-border); font-size: .95rem; }
 .ipf-cta a { color: var(--ipf-primary); font-weight: 600; }
@@ -437,7 +449,7 @@ a { color: var(--ipf-primary); }
         h("button", { type: "button", class: "ipf-btn", onclick: function () { go(E.parentState(state)); } }, [h("span", { "aria-hidden": "true", text: "← " }), "Back"]),
         h("button", { type: "button", class: "ipf-btn is-primary", onclick: function () { go({}); }, text: "Return to main menu" })
       ]),
-      h("p", { class: "ipf-cta" }, [D.cta.text + " ", h("a", { href: D.cta.url, target: "_top", text: D.cta.linkText })])
+      h("p", { class: "ipf-cta" }, [D.cta.text + " ", h("a", { href: r.ctaUrl, target: "_top", text: D.cta.linkText })])
     ];
   }
 
