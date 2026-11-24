@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Insurer phone finder</title>
+<style>
+/* ==========================================================================
+   BRAND TOKENS: replace these placeholders with Effra's values.
+   ========================================================================== */
+:root {
+  --ipf-font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --ipf-radius: 12px;          /* cards and buttons */
+  --ipf-radius-sm: 8px;        /* chips, small elements */
+
+  --ipf-bg: #ffffff;           /* page background */
+  --ipf-surface: #f5f6f8;      /* cards, panels */
+  --ipf-text: #1b1f24;         /* body text */
+  --ipf-muted: #545c66;        /* secondary text (≥ 4.5:1 on bg and surface) */
+  --ipf-border: #d3d8de;
+  --ipf-primary: #2a4767;      /* buttons, number, progress */
+  --ipf-primary-text: #ffffff; /* text on primary */
+  --ipf-primary-soft: #e7edf4; /* hover / selected tint */
+  --ipf-focus: #1458b8;        /* focus ring */
+
+  --ipf-open: #146234;   --ipf-open-bg: #e2f3e8;
+  --ipf-closed: #8c1d1d; --ipf-closed-bg: #fbe8e8;
+  --ipf-unknown: #545c66; --ipf-unknown-bg: #eceef1;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; padding: 0; }
+body { background: var(--ipf-bg); color: var(--ipf-text); font-family: var(--ipf-font); font-size: 16px; line-height: 1.45; -webkit-text-size-adjust: 100%; }
+.ipf { max-width: 640px; margin: 0 auto; padding: 16px; }
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+button, input, a { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--ipf-focus); outline-offset: 2px; }
+button { cursor: pointer; }
+
+/* Top bar: back + progress */
+.ipf-top { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; min-height: 40px; }
+.ipf-back { background: none; border: 1px solid var(--ipf-border); border-radius: var(--ipf-radius-sm); padding: 8px 12px; min-height: 40px; }
+.ipf-back:hover:not(:disabled) { background: var(--ipf-surface); }
+.ipf-back:disabled { opacity: .45; cursor: default; }
+.ipf-progress { flex: 1; height: 6px; border-radius: 3px; background: var(--ipf-surface); overflow: hidden; border: 1px solid var(--ipf-border); }
+.ipf-progress > span { display: block; height: 100%; background: var(--ipf-primary); width: 0; transition: width .25s ease; }
+@media (prefers-reduced-motion: reduce) { .ipf-progress > span { transition: none; } }
+
+h1, h2, h3 { line-height: 1.25; margin: 0; }
+.ipf-heading { font-size: 1.5rem; margin-bottom: 6px; }
+.ipf-heading:focus { outline: none; }
+.ipf-heading:focus-visible { outline: 3px solid var(--ipf-focus); }
+.ipf-sub { color: var(--ipf-muted); margin: 0 0 16px; }
+
+/* Context chip (selected insurer) */
+.ipf-chip { display: inline-flex; align-items: center; gap: 8px; font-size: .9rem; color: var(--ipf-muted); margin-bottom: 10px; }
+.ipf-chip .ipf-logo { width: 28px; height: 28px; font-size: .7rem; }
+
+/* Logo / initials */
+.ipf-logo { flex: none; width: 44px; height: 44px; border-radius: var(--ipf-radius-sm); background: #fff; border: 1px solid var(--ipf-border); display: inline-flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 700; font-size: .85rem; color: var(--ipf-primary); }
+.ipf-logo img { max-width: 100%; max-height: 100%; object-fit: contain; padding: 3px; }
+.ipf-logo.is-initials { background: var(--ipf-primary-soft); }
+
+/* Filter */
+.ipf-filter { display: block; margin: 0 0 14px; }
+.ipf-filter label { display: block; font-size: .9rem; color: var(--ipf-muted); margin-bottom: 4px; }
+.ipf-filter input { width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid var(--ipf-border); border-radius: var(--ipf-radius); background: var(--ipf-bg); }
+.ipf-empty { color: var(--ipf-muted); padding: 12px 0; }
+
+/* Option buttons */
+.ipf-options { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+@media (min-width: 480px) { .ipf-options.is-grid { grid-template-columns: 1fr 1fr; } }
+.ipf-option { width: 100%; min-height: 60px; display: flex; align-items: center; gap: 12px; text-align: left; padding: 12px 16px; background: var(--ipf-bg); border: 1px solid var(--ipf-border); border-radius: var(--ipf-radius); transition: background .15s, border-color .15s; }
+.ipf-option:hover { background: var(--ipf-primary-soft); border-color: var(--ipf-primary); }
+.ipf-option:active { transform: translateY(1px); }
+.ipf-option-text { display: flex; flex-direction: column; gap: 2px; }
+.ipf-option-label { font-weight: 600; }
+.ipf-option-detail { font-size: .88rem; color: var(--ipf-muted); }
+
+/* Result card */
+.ipf-card { background: var(--ipf-surface); border: 1px solid var(--ipf-border); border-radius: var(--ipf-radius); padding: 18px; }
+.ipf-card + .ipf-card { margin-top: 12px; }
+.ipf-label { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ipf-muted); font-weight: 600; margin: 0 0 4px; }
+.ipf-team { color: var(--ipf-muted); margin: 0 0 4px; }
+.ipf-number-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 2px 0 14px; }
+.ipf-number { font-size: clamp(1.7rem, 7.5vw, 2.3rem); font-weight: 700; color: var(--ipf-primary); text-decoration: none; letter-spacing: .01em; font-variant-numeric: tabular-nums; }
+.ipf-number:hover { text-decoration: underline; }
+.ipf-number.is-small { font-size: 1.3rem; }
+.ipf-copy { border: 1px solid var(--ipf-primary); background: var(--ipf-bg); color: var(--ipf-primary); border-radius: var(--ipf-radius-sm); padding: 6px 14px; min-height: 40px; font-weight: 600; }
+.ipf-copy:hover { background: var(--ipf-primary-soft); }
+.ipf-section { margin-top: 14px; }
+.ipf-section p { margin: 0; }
+
+.ipf-menu { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ipf-menu li { display: inline-flex; align-items: center; gap: 8px; }
+.ipf-menu li + li::before { content: "→"; color: var(--ipf-muted); font-weight: 700; }
+.ipf-menu-step { background: var(--ipf-primary); color: var(--ipf-primary-text); border-radius: var(--ipf-radius-sm); padding: 6px 12px; font-weight: 600; }
+
+.ipf-hours { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ipf-badge { display: inline-block; font-size: .8rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+.ipf-badge.is-open { color: var(--ipf-open); background: var(--ipf-open-bg); }
+.ipf-badge.is-closed { color: var(--ipf-closed); background: var(--ipf-closed-bg); }
+.ipf-note { font-size: .85rem; color: var(--ipf-muted); }
+
+.ipf-list { margin: 0; padding-left: 1.2em; }
+.ipf-list li + li { margin-top: 4px; }
+
+.ipf-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.ipf-btn { min-height: 48px; padding: 10px 18px; border-radius: var(--ipf-radius); border: 1px solid var(--ipf-border); background: var(--ipf-bg); font-weight: 600; }
+.ipf-btn:hover { background: var(--ipf-surface); }
+.ipf-btn.is-primary { background: var(--ipf-primary); color: var(--ipf-primary-text); border-color: var(--ipf-primary); }
+.ipf-btn.is-primary:hover { filter: brightness(1.12); }
+
+.ipf-cta { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--ipf-border); font-size: .95rem; }
+.ipf-cta a { color: var(--ipf-primary); font-weight: 600; }
+
+.ipf-footer { margin-top: 24px; font-size: .82rem; color: var(--ipf-muted); }
+a { color: var(--ipf-primary); }
+
+/* DEBUG:START */
+.ipf-debug { max-width: none; padding: 16px; font-size: 13px; border-top: 4px dashed #c47f00; margin-top: 32px; }
+.ipf-debug h2 { margin: 8px 0; }
+.ipf-debug table { border-collapse: collapse; width: 100%; }
+.ipf-debug th, .ipf-debug td { border: 1px solid #ccc; padding: 4px 6px; vertical-align: top; text-align: left; }
+.ipf-debug tr.is-verify { background: #fff6dd; }
+.ipf-debug tr.is-error { background: #fdd; }
+/* DEBUG:END */
+</style>
+</head>
+<body>
+<main class="ipf" id="ipf">
+  <div class="ipf-top">
+    <button type="button" class="ipf-back" id="ipf-back"><span aria-hidden="true">←</span> Back</button>
+    <div class="ipf-progress" id="ipf-progress" role="progressbar" aria-label="Progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+  </div>
+  <div id="ipf-live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+  <section id="ipf-step" aria-labelledby="ipf-heading"></section>
+  <footer class="ipf-footer" id="ipf-footer"></footer>
+  <noscript><p>This tool needs JavaScript. The full list of insurer numbers is in the table on this page.</p></noscript>
+</main>
+<!-- DEBUG:START -->
+<section class="ipf-debug" id="ipf-debug" hidden></section>
+<!-- DEBUG:END -->
+
+<script src="src/data.js"></script>
+<script src="src/engine.js"></script>
+<script>
+(function () {
+  "use strict";
+  var E = window.IPF_ENGINE, D = E.DATA;
+  // Build output sets window.__IPF_LOGOS__ = { insurerId: dataURI }. In source we try the files directly.
+  var LOGOS = window.__IPF_LOGOS__ || null;
+  var embedded = (function () { try { return window.parent !== window; } catch (e) { return true; } })();
+  var state = {};
+  var badgeEls = [];
+
+  var stepEl = document.getElementById("ipf-step");
+  var liveEl = document.getElementById("ipf-live");
+  var backEl = document.getElementById("ipf-back");
+  var progressEl = document.getElementById("ipf-progress");
+
+  // ------------------------------------------------------------ DOM helper
+  function h(tag, attrs, children) {
+    var el = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === "class") el.className = v;
+      else if (k === "text") el.textContent = v;
+      else if (k.slice(0, 2) === "on") el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? "" : v);
+    });
+    (children || []).forEach(function (c) {
+      if (c === null || c === undefined || c === false) return;
+      el.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    });
+    return el;
+  }
+
+  // Text with e-mail addresses turned into mailto: links.
+  function richText(text) {
+    var frag = document.createDocumentFragment(), re = /[\w.+-]+@[\w-]+(\.[\w-]+)+/g, last = 0, m;
+    while ((m = re.exec(text))) {
+      if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+      frag.appendChild(h("a", { href: "mailto:" + m[0], target: "_top", text: m[0] }));
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+    return frag;
+  }
+
+  function logo(insurer) {
+    var box = h("span", { class: "ipf-logo" });
+    function initials() { box.className = "ipf-logo is-initials"; box.textContent = insurer.initials || insurer.name.slice(0, 2); box.setAttribute("aria-hidden", "true"); }
+    if (LOGOS) {
+      if (LOGOS[insurer.id]) box.appendChild(h("img", { src: LOGOS[insurer.id], alt: insurer.name + " logo" }));
+      else initials();
+      return box;
+    }
+    // Source mode: try assets/logos/<id>.svg, then .png, then initials.
+    var exts = ["svg", "png"], i = 0;
+    var img = h("img", { alt: insurer.name + " logo" });
+    img.addEventListener("error", function () {
+      i++;
+      if (i < exts.length) img.src = "assets/logos/" + insurer.id + "." + exts[i];
+      else { if (img.parentNode) box.removeChild(img); initials(); }
+    });
+    img.src = "assets/logos/" + insurer.id + "." + exts[0];
+    box.appendChild(img);
+    return box;
+  }
+
+  // ------------------------------------------------------------ URL state
+  function parseSearch(search) {
+    var out = {};
+    try {
+      var p = new URLSearchParams(search || "");
+      E.STATE_KEYS.forEach(function (k) { if (p.has(k)) out[k] = p.get(k); });
+    } catch (e) {}
+    return out;
+  }
+  function initialSearch() {
+    var injected = window.__IPF_INITIAL_QUERY__;
+    if (typeof injected === "string" && injected.charAt(0) === "?") return injected;
+    try { return window.location.search; } catch (e) { return ""; }
+  }
+  function writeUrl(push) {
+    var params = E.stateToParams(state);
+    if (embedded) {
+      try { window.parent.postMessage({ type: "insurer-finder-state", params: params, keys: E.STATE_KEYS }, "*"); } catch (e) {}
+      return;
+    }
+    try {
+      var url = new URL(window.location.href);
+      E.STATE_KEYS.forEach(function (k) { url.searchParams.delete(k); });
+      Object.keys(params).forEach(function (k) { url.searchParams.set(k, params[k]); });
+      if (push) history.pushState(params, "", url.toString());
+      else history.replaceState(params, "", url.toString());
+    } catch (e) {}
+  }
+
+  // ------------------------------------------------------------ navigation
+  function go(next, opts) {
+    state = E.sanitize(next);
+    writeUrl(!(opts && opts.replace));
+    render(true);
+  }
+  function answer(id, value) {
+    var next = Object.assign({}, state); next[id] = value; go(next);
+  }
+  backEl.addEventListener("click", function () { go(E.parentState(state)); });
+  window.addEventListener("popstate", function () {
+    try { state = E.sanitize(parseSearch(window.location.search)); } catch (e) { state = {}; }
+    render(true);
+  });
+
+  // ------------------------------------------------------------ rendering
+  function heading(text) { return h("h2", { class: "ipf-heading", id: "ipf-heading", tabindex: "-1", text: text }); }
+
+  function insurerChip(insurer) {
+    return h("div", { class: "ipf-chip" }, [logo(insurer), h("span", { text: insurer.name })]);
+  }
+
+  function renderInsurerStep() {
+    var title = D.questions.insurer.title;
+    var count = h("p", { class: "sr-only", "aria-live": "polite" });
+    var empty = h("p", { class: "ipf-empty", hidden: true, text: "No insurers match. Try a different spelling." });
+    var items = D.insurers.map(function (ins) {
+      var btn = h("button", { type: "button", class: "ipf-option", onclick: function () { go({ insurer: ins.id }); } }, [
+        logo(ins),
+        h("span", { class: "ipf-option-text" }, [
+          h("span", { class: "ipf-option-label", text: ins.name }),
+          ins.hint ? h("span", { class: "ipf-option-detail", text: ins.hint }) : null
+        ])
+      ]);
+      return { ins: ins, li: h("li", null, [btn]), btn: btn };
+    });
+    var input = h("input", { id: "ipf-filter", type: "search", autocomplete: "off", spellcheck: "false", placeholder: "Start typing, e.g. AXA" });
+    input.addEventListener("input", function () {
+      var q = input.value.trim().toLowerCase(), shown = 0;
+      items.forEach(function (it) {
+        var match = !q || it.ins.name.toLowerCase().indexOf(q) !== -1 || it.ins.id.indexOf(q) !== -1;
+        it.li.hidden = !match; if (match) shown++;
+      });
+      empty.hidden = shown !== 0;
+      count.textContent = q ? shown + (shown === 1 ? " insurer" : " insurers") + " shown" : "";
+      postHeight();
+    });
+    input.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter") return;
+      var visible = items.filter(function (it) { return !it.li.hidden; });
+      if (visible.length === 1) { e.preventDefault(); visible[0].btn.click(); }
+    });
+    return [
+      heading(title),
+      h("p", { class: "ipf-sub", text: "Find the right number and phone-menu options for your query." }),
+      h("div", { class: "ipf-filter" }, [h("label", { for: "ipf-filter", text: "Filter insurers" }), input]),
+      count,
+      h("ul", { class: "ipf-options is-grid" }, items.map(function (it) { return it.li; })),
+      empty
+    ];
+  }
+
+  function renderQuestionStep(step) {
+    return [
+      insurerChip(step.insurer),
+      heading(step.title),
+      h("ul", { class: "ipf-options", style: "margin-top:14px" }, step.options.map(function (opt) {
+        return h("li", null, [h("button", { type: "button", class: "ipf-option", onclick: function () { answer(step.id, opt.value); } }, [
+          h("span", { class: "ipf-option-text" }, [
+            h("span", { class: "ipf-option-label", text: opt.label }),
+            opt.detail ? h("span", { class: "ipf-option-detail", text: opt.detail }) : null
+          ])
+        ])]);
+      }))
+    ];
+  }
+
+  function badge(line) {
+    var el = h("span", { class: "ipf-badge" });
+    badgeEls.push({ el: el, line: line });
+    updateBadge(el, line);
+    return el;
+  }
+  function updateBadge(el, line) {
+    var open = E.isOpenNow(line, new Date());
+    el.hidden = open === null;
+    el.className = "ipf-badge " + (open ? "is-open" : "is-closed");
+    el.textContent = open ? "Open now" : "Closed now";
+  }
+
+  function menuBlock(menu) {
+    if (!menu.length) return h("p", { text: "No phone-menu options listed. Tell the agent what you need." });
+    return h("ol", { class: "ipf-menu", "aria-label": "Phone-menu steps" }, menu.map(function (m) {
+      return h("li", null, [h("span", { class: "ipf-menu-step", text: m })]);
+    }));
+  }
+
+  function copyButton(text) {
+    var btn = h("button", { type: "button", class: "ipf-copy", "aria-label": "Copy number " + text, text: "Copy" });
+    btn.addEventListener("click", function () {
+      function done() { btn.textContent = "Copied"; announce("Number copied"); setTimeout(function () { btn.textContent = "Copy"; }, 2000); }
+      function fallback() {
+        try {
+          var ta = h("textarea", { readonly: true, style: "position:absolute;left:-9999px" }); ta.value = text;
+          document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); done();
+        } catch (e) { announce("Copy failed. Please select the number instead."); }
+      }
+      try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+    });
+    return btn;
+  }
+
+  function hoursBlock(line, hoursText) {
+    var known = E.isOpenNow(line, new Date()) !== null;
+    return h("div", null, [
+      h("div", { class: "ipf-hours" }, [h("span", { text: hoursText }), badge(line)]),
+      known && line.hours !== "24/7" ? h("p", { class: "ipf-note", text: "Usual hours, UK time." }) : null
+    ]);
+  }
+
+  function section(label, content) {
+    return h("div", { class: "ipf-section" }, [h("h3", { class: "ipf-label", text: label })].concat(content));
+  }
+
+  function queryLabel() {
+    return state.query ? E.labelFor("query", state.query) : "";
+  }
+
+  function renderResultStep(step) {
+    var r = step.result, m = r.main;
+    var title = "Call " + r.insurerName;
+    var main = h("div", { class: "ipf-card" }, [
+      m.team ? h("p", { class: "ipf-team", text: m.team }) : null,
+      h("div", { class: "ipf-number-row" }, [
+        h("a", { class: "ipf-number", href: m.tel, target: "_top", "aria-label": "Call " + m.number, text: m.number }),
+        copyButton(m.number)
+      ]),
+      section("Phone menu", [menuBlock(m.menu)]),
+      section("Opening hours", [hoursBlock(m.line, m.hoursText)]),
+      r.covers ? section("This line handles", [h("p", { text: r.covers })]) : null,
+      r.haveReady.length ? section("Have ready", [h("p", { text: r.haveReady.join(" · ") })]) : null,
+      r.tips.length ? section("Tips", [h("ul", { class: "ipf-list" }, r.tips.map(function (t) { return h("li", null, [richText(t)]); }))]) : null
+    ]);
+    var alt = null;
+    if (r.alternative) {
+      var a = r.alternative;
+      alt = h("div", { class: "ipf-card" }, [
+        h("h3", { class: "ipf-label", text: "Alternative number" }),
+        a.label ? h("p", { class: "ipf-team", text: a.label }) : null,
+        h("div", { class: "ipf-number-row" }, [
+          h("a", { class: "ipf-number is-small", href: a.tel, target: "_top", "aria-label": "Call " + a.number, text: a.number }),
+          copyButton(a.number)
+        ]),
+        section("Phone menu", [menuBlock(a.menu)]),
+        section("Opening hours", [hoursBlock(a.line, a.hoursText)])
+      ]);
+    }
+    return [
+      insurerChip(step.insurer),
+      heading(title),
+      queryLabel() ? h("p", { class: "ipf-sub", text: queryLabel() }) : h("p", { class: "ipf-sub", text: "Here's the number to call." }),
+      main,
+      alt,
+      h("div", { class: "ipf-actions" }, [
+        h("button", { type: "button", class: "ipf-btn", onclick: function () { go(E.parentState(state)); } }, [h("span", { "aria-hidden": "true", text: "← " }), "Back"]),
+        h("button", { type: "button", class: "ipf-btn is-primary", onclick: function () { go({}); }, text: "Start over" })
+      ]),
+      h("p", { class: "ipf-cta" }, [D.cta.text + " ", h("a", { href: D.cta.url, target: "_top", text: D.cta.linkText })])
+    ];
+  }
+
+  function renderError(step) {
+    return [heading("Sorry, something went wrong"), h("p", { text: "Please start over." }),
+      h("button", { type: "button", class: "ipf-btn is-primary", onclick: function () { go({}); }, text: "Start over" })];
+  }
+
+  function announce(text) { liveEl.textContent = ""; setTimeout(function () { liveEl.textContent = text; }, 30); }
+
+  function render(moveFocus) {
+    var step = E.getStep(state);
+    badgeEls = [];
+    var nodes = step.type === "insurer" ? renderInsurerStep()
+      : step.type === "question" ? renderQuestionStep(step)
+      : step.type === "result" ? renderResultStep(step) : renderError(step);
+    stepEl.textContent = "";
+    nodes.forEach(function (n) { if (n) stepEl.appendChild(n); });
+
+    // Progress + back
+    var done = E.answeredPath(state).length;
+    var pct = step.type === "result" ? 100 : Math.round(done / (done + E.maxRemaining(state) + 1) * 100);
+    pct = Math.max(pct, 4);
+    progressEl.firstElementChild.style.width = pct + "%";
+    progressEl.setAttribute("aria-valuenow", String(pct));
+    backEl.disabled = step.type === "insurer";
+
+    var stepNo = done + 1;
+    announce(step.type === "result"
+      ? "Result: call " + step.result.insurerName + " on " + step.result.main.number
+      : "Step " + stepNo + ": " + (step.title || ""));
+    if (moveFocus) {
+      var hd = document.getElementById("ipf-heading");
+      if (hd) try { hd.focus({ preventScroll: embedded }); } catch (e) { hd.focus(); }
+    }
+    postHeight();
+  }
+
+  // ------------------------------------------------------------ footer
+  document.getElementById("ipf-footer").textContent = "Last checked: " + D.lastChecked + " · " + D.disclaimer;
+
+  // ------------------------------------------------------------ iframe height
+  var lastHeight = 0;
+  function postHeight() {
+    if (!embedded) return;
+    var height = Math.ceil(document.documentElement.getBoundingClientRect().height);
+    if (height === lastHeight) return;
+    lastHeight = height;
+    try { window.parent.postMessage({ type: "insurer-finder-height", height: height }, "*"); } catch (e) {}
+  }
+  if (embedded) {
+    try { new ResizeObserver(postHeight).observe(document.body); } catch (e) { setInterval(postHeight, 500); }
+    window.addEventListener("load", postHeight);
+  }
+
+  // Refresh open/closed badges every minute.
+  setInterval(function () { badgeEls.forEach(function (b) { updateBadge(b.el, b.line); }); }, 60000);
+
+  // ------------------------------------------------------------ start
+  state = E.sanitize(parseSearch(initialSearch()));
+  if (Object.keys(state).length) writeUrl(false);
+  render(false);
+
+  /* DEBUG:START */
+  (function debugView() {
+    if (!/[?&]debug=1(&|$)/.test(initialSearch())) return;
+    var box = document.getElementById("ipf-debug");
+    box.hidden = false;
+    var paths = E.enumeratePaths();
+    var reached = {};
+    var rows = paths.map(function (p, i) {
+      var s = p.step, ok = s.type === "result";
+      var labels = Object.keys(p.state).map(function (k) {
+        return k === "insurer" ? E.getInsurer(p.state[k]).name : E.labelFor(k, p.state[k]);
+      }).join(" › ");
+      var href = "?" + new URLSearchParams(p.state).toString() + "&debug=1";
+      if (!ok) return h("tr", { class: "is-error" }, [h("td", { text: String(i + 1) }), h("td", { text: labels }), h("td", { colspan: "9", text: "ERROR: " + s.message })]);
+      var r = s.result; reached[r.routeId] = true;
+      return h("tr", { class: r.needsVerification ? "is-verify" : "" }, [
+        h("td", { text: String(i + 1) }),
+        h("td", null, [h("a", { href: href, text: labels })]),
+        h("td", { text: r.routeId }),
+        h("td", { text: r.main.number + (r.main.team ? " (" + r.main.team + ")" : "") }),
+        h("td", { text: r.main.menu.join(" → ") || "—" }),
+        h("td", { text: r.main.hoursText }),
+        h("td", { text: r.alternative ? r.alternative.number + " " + (r.alternative.menu.join(" → ")) + " (" + r.alternative.label + ")" : "" }),
+        h("td", { text: r.tips.join(" | ") }),
+        h("td", { text: r.haveReady.join(", ") }),
+        h("td", { text: r.covers }),
+        h("td", { text: r.needsVerification ? "⚠ " + r.verifyNote : "" })
+      ]);
+    });
+    var unreached = E.allRoutes().filter(function (x) { return !reached[x.route.id]; }).map(function (x) { return x.route.id; });
+    box.appendChild(h("h2", { text: "Debug: every path (" + paths.length + ")" }));
+    box.appendChild(h("p", { text: "Yellow = needsVerification. Unreachable routes: " + (unreached.join(", ") || "none") + ". Last checked: " + D.lastChecked }));
+    box.appendChild(h("table", null, [
+      h("thead", null, [h("tr", null, ["#", "Path", "Route", "Number", "Menu", "Hours", "Alternative", "Tips", "Have ready", "Covers", "Verify"].map(function (t) { return h("th", { text: t }); }))]),
+      h("tbody", null, rows)
+    ]));
+  })();
+  /* DEBUG:END */
+})();
+</script>
+</body>
+</html>

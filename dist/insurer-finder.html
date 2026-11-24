@@ -1,0 +1,1318 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Insurer phone finder</title>
+<style>
+/* ==========================================================================
+   BRAND TOKENS: replace these placeholders with Effra's values.
+   ========================================================================== */
+:root {
+  --ipf-font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --ipf-radius: 12px;          /* cards and buttons */
+  --ipf-radius-sm: 8px;        /* chips, small elements */
+
+  --ipf-bg: #ffffff;           /* page background */
+  --ipf-surface: #f5f6f8;      /* cards, panels */
+  --ipf-text: #1b1f24;         /* body text */
+  --ipf-muted: #545c66;        /* secondary text (≥ 4.5:1 on bg and surface) */
+  --ipf-border: #d3d8de;
+  --ipf-primary: #2a4767;      /* buttons, number, progress */
+  --ipf-primary-text: #ffffff; /* text on primary */
+  --ipf-primary-soft: #e7edf4; /* hover / selected tint */
+  --ipf-focus: #1458b8;        /* focus ring */
+
+  --ipf-open: #146234;   --ipf-open-bg: #e2f3e8;
+  --ipf-closed: #8c1d1d; --ipf-closed-bg: #fbe8e8;
+  --ipf-unknown: #545c66; --ipf-unknown-bg: #eceef1;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; padding: 0; }
+body { background: var(--ipf-bg); color: var(--ipf-text); font-family: var(--ipf-font); font-size: 16px; line-height: 1.45; -webkit-text-size-adjust: 100%; }
+.ipf { max-width: 640px; margin: 0 auto; padding: 16px; }
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+button, input, a { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--ipf-focus); outline-offset: 2px; }
+button { cursor: pointer; }
+
+/* Top bar: back + progress */
+.ipf-top { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; min-height: 40px; }
+.ipf-back { background: none; border: 1px solid var(--ipf-border); border-radius: var(--ipf-radius-sm); padding: 8px 12px; min-height: 40px; }
+.ipf-back:hover:not(:disabled) { background: var(--ipf-surface); }
+.ipf-back:disabled { opacity: .45; cursor: default; }
+.ipf-progress { flex: 1; height: 6px; border-radius: 3px; background: var(--ipf-surface); overflow: hidden; border: 1px solid var(--ipf-border); }
+.ipf-progress > span { display: block; height: 100%; background: var(--ipf-primary); width: 0; transition: width .25s ease; }
+@media (prefers-reduced-motion: reduce) { .ipf-progress > span { transition: none; } }
+
+h1, h2, h3 { line-height: 1.25; margin: 0; }
+.ipf-heading { font-size: 1.5rem; margin-bottom: 6px; }
+.ipf-heading:focus { outline: none; }
+.ipf-heading:focus-visible { outline: 3px solid var(--ipf-focus); }
+.ipf-sub { color: var(--ipf-muted); margin: 0 0 16px; }
+
+/* Context chip (selected insurer) */
+.ipf-chip { display: inline-flex; align-items: center; gap: 8px; font-size: .9rem; color: var(--ipf-muted); margin-bottom: 10px; }
+.ipf-chip .ipf-logo { width: 28px; height: 28px; font-size: .7rem; }
+
+/* Logo / initials */
+.ipf-logo { flex: none; width: 44px; height: 44px; border-radius: var(--ipf-radius-sm); background: #fff; border: 1px solid var(--ipf-border); display: inline-flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 700; font-size: .85rem; color: var(--ipf-primary); }
+.ipf-logo img { max-width: 100%; max-height: 100%; object-fit: contain; padding: 3px; }
+.ipf-logo.is-initials { background: var(--ipf-primary-soft); }
+
+/* Filter */
+.ipf-filter { display: block; margin: 0 0 14px; }
+.ipf-filter label { display: block; font-size: .9rem; color: var(--ipf-muted); margin-bottom: 4px; }
+.ipf-filter input { width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid var(--ipf-border); border-radius: var(--ipf-radius); background: var(--ipf-bg); }
+.ipf-empty { color: var(--ipf-muted); padding: 12px 0; }
+
+/* Option buttons */
+.ipf-options { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+@media (min-width: 480px) { .ipf-options.is-grid { grid-template-columns: 1fr 1fr; } }
+.ipf-option { width: 100%; min-height: 60px; display: flex; align-items: center; gap: 12px; text-align: left; padding: 12px 16px; background: var(--ipf-bg); border: 1px solid var(--ipf-border); border-radius: var(--ipf-radius); transition: background .15s, border-color .15s; }
+.ipf-option:hover { background: var(--ipf-primary-soft); border-color: var(--ipf-primary); }
+.ipf-option:active { transform: translateY(1px); }
+.ipf-option-text { display: flex; flex-direction: column; gap: 2px; }
+.ipf-option-label { font-weight: 600; }
+.ipf-option-detail { font-size: .88rem; color: var(--ipf-muted); }
+
+/* Result card */
+.ipf-card { background: var(--ipf-surface); border: 1px solid var(--ipf-border); border-radius: var(--ipf-radius); padding: 18px; }
+.ipf-card + .ipf-card { margin-top: 12px; }
+.ipf-label { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ipf-muted); font-weight: 600; margin: 0 0 4px; }
+.ipf-team { color: var(--ipf-muted); margin: 0 0 4px; }
+.ipf-number-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 2px 0 14px; }
+.ipf-number { font-size: clamp(1.7rem, 7.5vw, 2.3rem); font-weight: 700; color: var(--ipf-primary); text-decoration: none; letter-spacing: .01em; font-variant-numeric: tabular-nums; }
+.ipf-number:hover { text-decoration: underline; }
+.ipf-number.is-small { font-size: 1.3rem; }
+.ipf-copy { border: 1px solid var(--ipf-primary); background: var(--ipf-bg); color: var(--ipf-primary); border-radius: var(--ipf-radius-sm); padding: 6px 14px; min-height: 40px; font-weight: 600; }
+.ipf-copy:hover { background: var(--ipf-primary-soft); }
+.ipf-section { margin-top: 14px; }
+.ipf-section p { margin: 0; }
+
+.ipf-menu { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ipf-menu li { display: inline-flex; align-items: center; gap: 8px; }
+.ipf-menu li + li::before { content: "→"; color: var(--ipf-muted); font-weight: 700; }
+.ipf-menu-step { background: var(--ipf-primary); color: var(--ipf-primary-text); border-radius: var(--ipf-radius-sm); padding: 6px 12px; font-weight: 600; }
+
+.ipf-hours { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ipf-badge { display: inline-block; font-size: .8rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+.ipf-badge.is-open { color: var(--ipf-open); background: var(--ipf-open-bg); }
+.ipf-badge.is-closed { color: var(--ipf-closed); background: var(--ipf-closed-bg); }
+.ipf-note { font-size: .85rem; color: var(--ipf-muted); }
+
+.ipf-list { margin: 0; padding-left: 1.2em; }
+.ipf-list li + li { margin-top: 4px; }
+
+.ipf-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.ipf-btn { min-height: 48px; padding: 10px 18px; border-radius: var(--ipf-radius); border: 1px solid var(--ipf-border); background: var(--ipf-bg); font-weight: 600; }
+.ipf-btn:hover { background: var(--ipf-surface); }
+.ipf-btn.is-primary { background: var(--ipf-primary); color: var(--ipf-primary-text); border-color: var(--ipf-primary); }
+.ipf-btn.is-primary:hover { filter: brightness(1.12); }
+
+.ipf-cta { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--ipf-border); font-size: .95rem; }
+.ipf-cta a { color: var(--ipf-primary); font-weight: 600; }
+
+.ipf-footer { margin-top: 24px; font-size: .82rem; color: var(--ipf-muted); }
+a { color: var(--ipf-primary); }
+
+</style>
+</head>
+<body>
+<main class="ipf" id="ipf">
+  <div class="ipf-top">
+    <button type="button" class="ipf-back" id="ipf-back"><span aria-hidden="true">←</span> Back</button>
+    <div class="ipf-progress" id="ipf-progress" role="progressbar" aria-label="Progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+  </div>
+  <div id="ipf-live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+  <section id="ipf-step" aria-labelledby="ipf-heading"></section>
+  <footer class="ipf-footer" id="ipf-footer"></footer>
+  <noscript><p>This tool needs JavaScript. The full list of insurer numbers is in the table on this page.</p></noscript>
+</main>
+<script>
+window.__IPF_LOGOS__ = {};
+window.__IPF_INITIAL_QUERY__ = "__IPF_INITIAL_QUERY__";
+</script>
+<script>
+/* =============================================================================
+ *  INSURER DATA: the only file you need to edit to change a number,
+ *  a menu option, opening hours or a tip.
+ * =============================================================================
+ *
+ *  After any edit, run:   npm test     (checks every path still ends at a number)
+ *                 then:   npm run build (regenerates dist/ for Framer + the table)
+ *
+ *  HOW IT FITS TOGETHER
+ *  --------------------
+ *  Each insurer has:
+ *    lines     The phone lines we know about. A route points at a line by its key.
+ *              Change a number or its hours HERE and every route that uses that
+ *              line updates, in the tool and in the SEO table.
+ *    questions The questions the wizard may ask for this insurer, in the order
+ *              they are asked. A question is only asked when the answer changes
+ *              which route you end up on, so you never need to say *when* to ask.
+ *    routes    Each route is one result card (and one row in the SEO table).
+ *              `when` says which answers lead here. A list such as
+ *              ["payment", "cover"] means "any of these answers".
+ *              An insurer with a single route and an empty `when` skips the
+ *              questions and goes straight to the result.
+ *
+ *  ROUTE FIELDS
+ *    id                 Unique, lowercase, no spaces. Used in tests and the table.
+ *    when               { questionId: answer } (see `questions` at the bottom).
+ *    line               Key of a line in this insurer's `lines`.
+ *    menu               Phone-menu steps, in order. A single digit "3" is shown
+ *                       as "Press 3". Anything else is shown exactly as written.
+ *                       [] = no menu options listed in our source.
+ *    covers             (optional) What this line handles, shown on the card.
+ *    tips               (optional) Extra tips for this route only.
+ *    haveReady          (optional) Overrides the default "Have ready" list.
+ *    transfer           (optional) true = add the "ask to be transferred" tip.
+ *    alternative        (optional) { line, menu, label } A second number to offer.
+ *    needsVerification  true = we made an assumption. Listed in VERIFY.md.
+ *    verifyNote         Short note on what needs checking (shown in ?debug=1).
+ *
+ *  LINE FIELDS
+ *    number     Exactly as it should be displayed.
+ *    team       (optional) Team name shown under the number.
+ *    hours      "24/7", or null if our source gives no hours, or a list of
+ *               { days: "Mon-Fri", from: "09:00", to: "17:00" }
+ *               (days: Mon Tue Wed Thu Fri Sat Sun, a range "Mon-Fri", or "Sat").
+ *               Times are UK time, 24-hour clock. Bank holidays are not modelled.
+ *    hoursNote  (optional) Shown when the hours can't be put in the format above.
+ *    tips       (optional) Tips shown on every route that uses this line.
+ *
+ *  Never add a number, option, hours or a bank-holiday rule that isn't in the
+ *  source document. If in doubt, set needsVerification: true.
+ * ========================================================================== */
+
+var IPF_DATA = {
+
+  // ---------------------------------------------------------------------------
+  // Shown in the tool footer AND the SEO table. Update this whenever the
+  // numbers are re-checked.
+  // ---------------------------------------------------------------------------
+  lastChecked: "November 2026",
+
+  // Footer disclaimer (after the date).
+  disclaimer: "Numbers and menu options can change. Not affiliated with these insurers.",
+
+  // The single Effra call to action on the result card.
+  cta: {
+    text: "Effra handles insurer billing and chasing for 1000+ practitioners.",
+    linkText: "See how →",
+    url: "https://www.effra.com/PLACEHOLDER" // TODO: replace with the real URL
+  },
+
+  // Tip used on every "Something else" route that goes to a general number.
+  transferTip: "Ask the agent to transfer you to the right team.",
+
+  // Default "Have ready" list per query type. A route can override with `haveReady`.
+  haveReadyDefaults: {
+    invoice:  ["Invoice number", "Patient's membership number"],
+    payment:  ["Invoice number", "Patient's membership number"],
+    preauth:  ["Patient's membership number"],
+    cover:    ["Patient's membership number"],
+    submit:   ["Invoice details", "Patient's membership number"],
+    contract: [],
+    details:  [],
+    recoup:   ["Invoice number", "Patient's membership number"],
+    other:    []
+  },
+
+  // ===========================================================================
+  //  INSURERS (shown in this order, so keep them alphabetical)
+  // ===========================================================================
+  insurers: [
+
+    // ------------------------------------------------------------------ ALLIANZ
+    {
+      id: "allianz",
+      name: "Allianz",
+      initials: "Al",
+      lines: {
+        main: { number: "+353 163 01301", hours: "24/7" },
+        second: { number: "+353 160 1300", hours: null,
+                  hoursNote: "Hours and purpose not listed" }
+      },
+      questions: [],
+      routes: [
+        {
+          id: "allianz-all",
+          when: {},
+          line: "main",
+          menu: [],
+          haveReady: ["Patient's membership number"],
+          alternative: { line: "second", menu: [], label: "Other Allianz number" },
+          needsVerification: true,
+          verifyNote: "Source gives no purpose for either number, and no hours for the second."
+        }
+      ]
+    },
+
+    // -------------------------------------------------------------------- AVIVA
+    {
+      id: "aviva",
+      name: "Aviva",
+      initials: "Av",
+      lines: {
+        invoicing: { number: "0800 015 0107",
+                     hours: [{ days: "Mon-Fri", from: "08:00", to: "18:00" }] }
+      },
+      questions: [],
+      routes: [
+        {
+          id: "aviva-invoicing",
+          when: {},
+          line: "invoicing",
+          menu: [],
+          covers: "Invoicing queries",
+          tips: ["Go through your invoices one at a time."],
+          haveReady: ["Invoice number", "Patient's membership number"],
+          needsVerification: true,
+          verifyNote: "Only invoicing is covered by our source; no number for other Aviva queries."
+        }
+      ]
+    },
+
+    // ---------------------------------------------------------------------- AXA
+    {
+      id: "axa",
+      name: "AXA",
+      initials: "AXA",
+      lines: {
+        general: {
+          number: "01892 503030",
+          hours: [{ days: "Mon-Fri", from: "09:00", to: "17:00" }],
+          tips: ["Wait times are usually shortest between 3pm and 5pm."]
+        },
+        bristol: { number: "0800 854929", team: "AXA Bristol Team", hours: null },
+        hol: { number: "0345 600 7696", team: "Health-on-Line Team",
+               hours: [{ days: "Mon-Fri", from: "08:00", to: "18:00" }] },
+        accountOther: { number: "020 4626 3233", team: "Provider account services", hours: null }
+      },
+      questions: ["query", "invoiceType", "policy"],
+      routes: [
+        // Billing & invoicing: Op 1 → Op 2
+        {
+          id: "axa-invoice-specific",
+          when: { query: "invoice", invoiceType: "specific" },
+          line: "general",
+          menu: ["1", "2"],
+          tips: [
+            "Go through your invoices one at a time.",
+            "If AXA reassesses an invoice over the phone, it usually takes about 5 days, then shows on your remittance around a month later."
+          ],
+          haveReady: ["Patient's policy number", "Invoice number"]
+        },
+        // Provider account services (invoice route)
+        {
+          id: "axa-invoice-account-stp",
+          when: { query: "invoice", invoiceType: "account", policy: "stp" },
+          line: "bristol", menu: [],
+          haveReady: ["Patient's policy number", "Invoice number"],
+          needsVerification: true,
+          verifyNote: "No hours given for the AXA Bristol Team; no menu options given."
+        },
+        {
+          id: "axa-invoice-account-hol",
+          when: { query: "invoice", invoiceType: "account", policy: "hol" },
+          line: "hol", menu: [],
+          haveReady: ["Patient's policy number", "Invoice number"]
+        },
+        {
+          id: "axa-invoice-account-other",
+          when: { query: "invoice", invoiceType: "account", policy: ["other", "unknown"] },
+          line: "accountOther", menu: [],
+          haveReady: ["Patient's policy number", "Invoice number"],
+          needsVerification: true,
+          verifyNote: "No hours given for 020 4626 3233."
+        },
+        // Provider account services (payment / remittance route)
+        {
+          id: "axa-payment-stp",
+          when: { query: "payment", policy: "stp" },
+          line: "bristol", menu: [],
+          haveReady: ["Patient's policy number", "Invoice number"],
+          needsVerification: true,
+          verifyNote: "Payment queries sent to account services, not Op 1 → Op 2 ('amount AXA paid'). No hours for Bristol Team."
+        },
+        {
+          id: "axa-payment-hol",
+          when: { query: "payment", policy: "hol" },
+          line: "hol", menu: [],
+          haveReady: ["Patient's policy number", "Invoice number"],
+          needsVerification: true,
+          verifyNote: "Payment queries sent to account services, not Op 1 → Op 2 ('amount AXA paid')."
+        },
+        {
+          id: "axa-payment-other",
+          when: { query: "payment", policy: ["other", "unknown"] },
+          line: "accountOther", menu: [],
+          haveReady: ["Patient's policy number", "Invoice number"],
+          needsVerification: true,
+          verifyNote: "Payment queries sent to account services, not Op 1 → Op 2. No hours for 020 4626 3233."
+        },
+        {
+          id: "axa-cover",
+          when: { query: "cover" },
+          line: "general", menu: ["1", "2"],
+          haveReady: ["Patient's policy number"]
+        },
+        {
+          id: "axa-preauth",
+          when: { query: "preauth" },
+          line: "general", menu: ["3"],
+          haveReady: ["Patient's policy number"]
+        },
+        {
+          id: "axa-contract",
+          when: { query: "contract" },
+          line: "general", menu: ["2"]
+        },
+        {
+          id: "axa-details",
+          when: { query: "details" },
+          line: "general", menu: ["5"],
+          tips: ["AXA asks providers to make practice detail changes through Healthcode's Private Practice Register (PPR) first. Call if a change hasn't appeared in AXA's records, or a detail needs correcting."]
+        },
+        {
+          id: "axa-recoup",
+          when: { query: "recoup" },
+          line: "general", menu: ["1", "3"],
+          haveReady: ["Patient's policy number", "Invoice number"]
+        },
+        {
+          id: "axa-other",
+          when: { query: "other" },
+          line: "general", menu: [],
+          transfer: true
+        }
+      ]
+    },
+
+    // --------------------------------------------------------------- AXA GLOBAL
+    {
+      id: "axa-global",
+      name: "AXA Global",
+      hint: "Global = international policies",
+      initials: "AXA",
+      lines: {
+        main: { number: "+44 (0)1892 503 856", team: "Provider team", hours: "24/7" }
+      },
+      questions: [],
+      routes: [
+        {
+          id: "axa-global-all",
+          when: {},
+          line: "main",
+          menu: ["2"],
+          covers: "All provider queries (option 2 is the provider team)",
+          haveReady: ["Patient's policy number"],
+          needsVerification: true,
+          verifyNote: "Source gives one number and option for everything; query step skipped."
+        }
+      ]
+    },
+
+    // --------------------------------------------------------------------- BUPA
+    {
+      id: "bupa",
+      name: "Bupa",
+      initials: "Bu",
+      lines: {
+        provider: { number: "0345 755 3333", team: "Provider Services Team",
+                    hours: [{ days: "Mon-Fri", from: "09:00", to: "17:00" }] },
+        recognition: { number: "0345 600 5422", team: "Provider recognition, contracts and agreed fees",
+                       hours: [{ days: "Mon-Fri", from: "10:00", to: "16:00" }] }
+      },
+      questions: ["query"],
+      routes: [
+        { id: "bupa-invoice", when: { query: "invoice" }, line: "provider", menu: ["1"] },
+        {
+          id: "bupa-payment", when: { query: "payment" }, line: "provider", menu: ["1"],
+          needsVerification: true,
+          verifyNote: "Source lists option 1 for 'invoice queries' only; payments/remittances assumed to go there too."
+        },
+        { id: "bupa-preauth", when: { query: "preauth" }, line: "provider", menu: ["1"] },
+        { id: "bupa-cover", when: { query: "cover" }, line: "provider", menu: ["1"] },
+        { id: "bupa-contract", when: { query: "contract" }, line: "recognition", menu: [] },
+        { id: "bupa-other", when: { query: "other" }, line: "provider", menu: [], transfer: true }
+      ]
+    },
+
+    // -------------------------------------------------------------- BUPA GLOBAL
+    {
+      id: "bupa-global",
+      name: "Bupa Global",
+      hint: "Global = international policies",
+      initials: "BG",
+      lines: {
+        main: { number: "01273 323563", hours: "24/7" }
+      },
+      questions: [],
+      routes: [
+        {
+          id: "bupa-global-all",
+          when: {},
+          line: "main",
+          menu: [],
+          covers: "Pre-authorisation, claim information, payments and missing remittances",
+          haveReady: ["Patient's membership number", "Invoice number (for claim or payment queries)"],
+          needsVerification: true,
+          verifyNote: "One number for everything listed; query step skipped. No patient-cover route given."
+        }
+      ]
+    },
+
+    // -------------------------------------------------------------------- CIGNA
+    {
+      id: "cigna",
+      name: "Cigna",
+      initials: "Ci",
+      // Tips shown on EVERY Cigna result:
+      tips: ["If the first agent can't help or suggests emailing, call back and you'll usually reach a different agent."],
+      lines: {
+        eu: { number: "01475 492145", team: "Cigna EU",
+              hours: [{ days: "Mon-Fri", from: "08:00", to: "20:00" },
+                      { days: "Sat", from: "09:00", to: "12:00" }] },
+        individual: { number: "+44 1475 788 182", team: "Cigna Individual", hours: "24/7" },
+        northAmerica: { number: "+1 800 441 2668", team: "Cigna North America", hours: null,
+                        hoursNote: "Open from 1pm UK time" },
+        general: { number: "+32 3 293 1811", team: "General number for UK clinics", hours: null },
+        globalEmployer: { number: "+44 1475 492 197", team: "Cigna Global Employer Health (EU)", hours: null }
+      },
+      questions: ["memberId", "query"],
+      routes: [
+        {
+          id: "cigna-eu-payment", when: { memberId: "eu", query: "payment" },
+          line: "eu", menu: ["1"],
+          haveReady: ["Patient's member ID", "Invoice number"],
+          alternative: { line: "globalEmployer", menu: [], label: "For Cigna Global Employer Health policies in the EU" },
+          needsVerification: true,
+          verifyNote: "Placement of the Global Employer Health (EU) number is assumed."
+        },
+        {
+          id: "cigna-eu-preauth", when: { memberId: "eu", query: "preauth" },
+          line: "eu", menu: ["2"],
+          haveReady: ["Patient's member ID"],
+          alternative: { line: "globalEmployer", menu: [], label: "For Cigna Global Employer Health policies in the EU" },
+          needsVerification: true,
+          verifyNote: "Option 2 is 'pre-admission checks', read as pre-authorisation. Global Employer Health placement assumed."
+        },
+        {
+          id: "cigna-eu-provider", when: { memberId: "eu", query: ["invoice", "cover", "other"] },
+          line: "eu", menu: ["3"],
+          haveReady: ["Patient's member ID"],
+          alternative: { line: "globalEmployer", menu: [], label: "For Cigna Global Employer Health policies in the EU" },
+          needsVerification: true,
+          verifyNote: "Invoice and cover queries sent to option 3 (provider team). Global Employer Health placement assumed."
+        },
+        {
+          id: "cigna-individual", when: { memberId: "individual" },
+          line: "individual", menu: [],
+          haveReady: ["Patient's member ID"]
+        },
+        {
+          id: "cigna-north-america", when: { memberId: "northAmerica" },
+          line: "northAmerica", menu: ["Extension 152 (dial #152)"],
+          haveReady: ["Patient's member ID"],
+          needsVerification: true,
+          verifyNote: "Only 'open from 1pm UK time' is given: no closing time or days."
+        },
+        {
+          id: "cigna-general", when: { memberId: "none" },
+          line: "general", menu: [],
+          needsVerification: true,
+          verifyNote: "No hours given for the general number."
+        }
+      ]
+    },
+
+    // ------------------------------------------------------------ HEALIX HEALTH
+    {
+      id: "healix",
+      name: "Healix Health",
+      initials: "He",
+      lines: {
+        main: { number: "020 3376 3907",
+                hours: [{ days: "Mon-Fri", from: "09:00", to: "17:00" }] }
+      },
+      questions: ["query"],
+      routes: [
+        { id: "healix-preauth", when: { query: "preauth" }, line: "main", menu: ["1"] },
+        { id: "healix-invoice", when: { query: "invoice" }, line: "main", menu: ["2"] },
+        {
+          id: "healix-payment", when: { query: "payment" }, line: "main", menu: ["2"],
+          needsVerification: true,
+          verifyNote: "Option 2 is 'invoice and billing queries'; payments/remittances assumed to go there."
+        },
+        { id: "healix-other", when: { query: "other" }, line: "main", menu: [], transfer: true }
+      ]
+    },
+
+    // ----------------------------------------------------------------- VITALITY
+    {
+      id: "vitality",
+      name: "Vitality",
+      initials: "Vi",
+      lines: {
+        main: { number: "0800 092 9400",
+                hours: [{ days: "Mon-Fri", from: "10:00", to: "15:00" }] }
+      },
+      questions: ["query", "urgent"],
+      routes: [
+        { id: "vitality-invoice", when: { query: "invoice" }, line: "main", menu: ["3", "1"] },
+        { id: "vitality-preauth-urgent", when: { query: "preauth", urgent: "yes" }, line: "main", menu: ["3", "2"] },
+        { id: "vitality-preauth", when: { query: "preauth", urgent: "no" }, line: "main", menu: ["3"] },
+        {
+          id: "vitality-provider", when: { query: ["payment", "cover", "other"] }, line: "main", menu: ["3"],
+          covers: "Other provider questions, e.g. patient cover, authorisation, remittances, invoices"
+        }
+      ]
+    },
+
+    // ---------------------------------------------------------------------- WPA
+    {
+      id: "wpa",
+      name: "WPA",
+      initials: "WPA",
+      lines: {
+        billing: { number: "01823 625278", team: "Billing & payment queries", hours: null },
+        claims: { number: "01823 625000", hours: null },
+        provider: { number: "01823 625170",
+                    hours: [{ days: "Mon-Fri", from: "09:00", to: "16:00" }] }
+      },
+      questions: ["query", "invoiceCount"],
+      routes: [
+        {
+          id: "wpa-invoice-one", when: { query: "invoice", invoiceCount: "one" },
+          line: "provider", menu: ["4", "3"],
+          alternative: { line: "billing", menu: ["4"], label: "Billing & payment queries line" },
+          needsVerification: true,
+          verifyNote: "Overlaps with 01823 625278 option 4; 625170 chosen as primary because hours are known."
+        },
+        {
+          id: "wpa-invoice-several", when: { query: "invoice", invoiceCount: "several" },
+          line: "provider", menu: ["4", "1"],
+          alternative: { line: "billing", menu: ["4"], label: "Billing & payment queries line" },
+          needsVerification: true,
+          verifyNote: "Overlaps with 01823 625278 option 4; 625170 chosen as primary because hours are known."
+        },
+        {
+          id: "wpa-payment", when: { query: "payment" },
+          line: "billing", menu: ["4"],
+          tips: ["For a payment dispute, email ageddebt@wpa.org.uk. To follow up by phone, call 01823 625170 and ask to be routed to that team."],
+          needsVerification: true,
+          verifyNote: "No hours for 01823 625278. No dedicated line for payment disputes."
+        },
+        {
+          id: "wpa-preauth", when: { query: "preauth" },
+          line: "provider", menu: ["2"],
+          alternative: { line: "billing", menu: ["2"], label: "Billing & payment queries line" },
+          needsVerification: true,
+          verifyNote: "Overlaps with 01823 625278 option 2; 625170 chosen as primary."
+        },
+        { id: "wpa-cover", when: { query: "cover" }, line: "provider", menu: ["3"] },
+        {
+          id: "wpa-submit", when: { query: "submit" },
+          line: "claims", menu: ["3"],
+          alternative: { line: "provider", menu: ["4"], label: "Provider line (invoice query / submit invoice)" },
+          needsVerification: true,
+          verifyNote: "Overlaps with 01823 625170 option 4. No hours for 01823 625000."
+        },
+        { id: "wpa-contract", when: { query: "contract" }, line: "provider", menu: ["5"] },
+        { id: "wpa-details", when: { query: "details" }, line: "provider", menu: ["6"] },
+        {
+          id: "wpa-other", when: { query: "other" },
+          line: "provider", menu: [],
+          transfer: true,
+          alternative: { line: "claims", menu: ["1"], label: "For treatment or claim queries" },
+          needsVerification: true,
+          verifyNote: "01823 625000 option 1 (treatment/claim queries) offered as the alternative here."
+        }
+      ]
+    }
+  ],
+
+  // ===========================================================================
+  //  QUESTIONS: wording and answer options. Option `value`s are what routes
+  //  use in `when`, and what appears in the shareable URL. Only change a
+  //  `value` if you also change every route that uses it.
+  // ===========================================================================
+  questions: {
+    insurer: {
+      title: "Which insurer is this for?"
+    },
+    query: {
+      title: "What do you need to do?",
+      options: [
+        { value: "invoice",  label: "Chase or check an invoice" },
+        { value: "payment",  label: "Query a payment / remittance I can't reconcile" },
+        { value: "preauth",  label: "Get pre-authorisation" },
+        { value: "cover",    label: "Check patient cover / membership number" },
+        { value: "submit",   label: "Submit an invoice" },
+        { value: "contract", label: "Provider recognition, contract or agreed fees" },
+        { value: "details",  label: "Update our practice details" },
+        { value: "recoup",   label: "Overpayment / recoup request" },
+        { value: "other",    label: "Something else" }
+      ]
+    },
+    invoiceType: {
+      title: "What's the invoice question?",
+      shortTitle: "Invoice question",          // used in the SEO table and CSV
+      options: [
+        { value: "specific", label: "A question about a specific invoice",
+          detail: "Its status, or an amount paid that needs explaining" },
+        { value: "account",  label: "Received but not paid, or I can't reconcile it",
+          detail: "Remittance queries, dropped claims, account-level payment issues" }
+      ]
+    },
+    policy: {
+      title: "What does the patient's policy number start with?",
+      shortTitle: "Policy number starts with",
+      options: [
+        { value: "stp",     label: "STP" },
+        { value: "hol",     label: "HOL" },
+        { value: "other",   label: "Something else" },
+        { value: "unknown", label: "Don't know" }
+      ]
+    },
+    memberId: {
+      title: "What does the member ID start with?",
+      shortTitle: "Member ID starts with",
+      options: [
+        { value: "eu",           label: "85, 80 or 88", detail: "Cigna EU" },
+        { value: "individual",   label: "9",            detail: "Cigna Individual" },
+        { value: "northAmerica", label: "21",           detail: "Cigna North America" },
+        { value: "none",         label: "No member ID", detail: "General number for UK clinics" }
+      ]
+    },
+    urgent: {
+      title: "Is treatment needed within 72 hours?",
+      shortTitle: "Treatment needed within 72 hours",
+      options: [
+        { value: "yes", label: "Yes, within 72 hours" },
+        { value: "no",  label: "No" }
+      ]
+    },
+    invoiceCount: {
+      title: "Is this about one invoice or several?",
+      shortTitle: "Number of invoices",
+      options: [
+        { value: "one",     label: "One specific invoice" },
+        { value: "several", label: "Several invoices" }
+      ]
+    }
+  }
+};
+
+// (Plumbing: lets both the browser and the tests read this file. Leave as is.)
+if (typeof module !== "undefined" && module.exports) { module.exports = IPF_DATA; }
+else { window.IPF_DATA = IPF_DATA; }
+
+</script>
+<script>
+/* Routing engine: pure functions, no DOM. Reads IPF_DATA (src/data.js).
+ * Used by the wizard (index.html), the build (table + CSV) and the tests. */
+(function (root, factory) {
+  if (typeof module !== "undefined" && module.exports) module.exports = factory(require("./data.js"));
+  else root.IPF_ENGINE = factory(root.IPF_DATA);
+})(typeof self !== "undefined" ? self : this, function (DATA) {
+  "use strict";
+
+  var DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  var DAY_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  var STATE_KEYS = ["insurer"].concat(Object.keys(DATA.questions).filter(function (k) { return k !== "insurer"; }));
+
+  function getInsurer(id) {
+    for (var i = 0; i < DATA.insurers.length; i++) if (DATA.insurers[i].id === id) return DATA.insurers[i];
+    return null;
+  }
+
+  function matchValue(cond, value) {
+    return Array.isArray(cond) ? cond.indexOf(value) !== -1 : cond === value;
+  }
+
+  // Routes still possible given the answers so far.
+  function candidates(insurer, state) {
+    return insurer.routes.filter(function (r) {
+      return insurer.questions.every(function (q) {
+        if (state[q] === undefined || r.when[q] === undefined) return true;
+        return matchValue(r.when[q], state[q]);
+      });
+    });
+  }
+
+  function questionOptions(qid, cands) {
+    var def = DATA.questions[qid];
+    return def.options.filter(function (opt) {
+      return cands.some(function (r) { return r.when[qid] !== undefined && matchValue(r.when[qid], opt.value); });
+    });
+  }
+
+  // Returns { type: "insurer" } | { type: "question", id, title, options } | { type: "result", route, result }
+  // or { type: "error", message } if the data is inconsistent (the tests make sure this never happens).
+  function getStep(state) {
+    var insurer = state.insurer && getInsurer(state.insurer);
+    if (!insurer) return { type: "insurer", id: "insurer", title: DATA.questions.insurer.title };
+    var cands = candidates(insurer, state);
+    for (var i = 0; i < insurer.questions.length; i++) {
+      var q = insurer.questions[i];
+      if (state[q] !== undefined) continue;
+      if (!cands.some(function (r) { return r.when[q] !== undefined; })) continue;
+      return { type: "question", id: q, title: DATA.questions[q].title, options: questionOptions(q, cands), insurer: insurer };
+    }
+    if (cands.length !== 1) {
+      return { type: "error", message: (cands.length ? "Several" : "No") + " routes match for " + insurer.id + " " + JSON.stringify(state) };
+    }
+    return { type: "result", route: cands[0], insurer: insurer, result: buildResult(insurer, cands[0], state) };
+  }
+
+  // Rebuild a clean state from untrusted params (e.g. the URL), stopping at the first invalid answer.
+  function sanitize(params) {
+    var state = {};
+    if (!params || !getInsurer(params.insurer)) return state;
+    state.insurer = params.insurer;
+    for (var guard = 0; guard < 20; guard++) {
+      var step = getStep(state);
+      if (step.type !== "question") break;
+      var v = params[step.id];
+      if (!step.options.some(function (o) { return o.value === v; })) break;
+      state[step.id] = v;
+    }
+    return state;
+  }
+
+  // Keys answered, in the order they were asked.
+  function answeredPath(state) {
+    var clean = sanitize(state), path = [], replay = {};
+    if (!clean.insurer) return path;
+    path.push("insurer"); replay.insurer = clean.insurer;
+    for (var guard = 0; guard < 20; guard++) {
+      var step = getStep(replay);
+      if (step.type !== "question" || clean[step.id] === undefined) break;
+      replay[step.id] = clean[step.id]; path.push(step.id);
+    }
+    return path;
+  }
+
+  function parentState(state) {
+    var path = answeredPath(state), out = {};
+    path.slice(0, -1).forEach(function (k) { out[k] = state[k]; });
+    return out;
+  }
+
+  // Most questions still to come on the longest remaining branch (for the progress bar).
+  function maxRemaining(state) {
+    var step = getStep(state);
+    if (step.type === "insurer") {
+      return 1 + Math.max.apply(null, DATA.insurers.map(function (ins) { return maxRemaining({ insurer: ins.id }); }));
+    }
+    if (step.type !== "question") return 0;
+    return 1 + Math.max.apply(null, step.options.map(function (o) {
+      var next = Object.assign({}, state); next[step.id] = o.value; return maxRemaining(next);
+    }));
+  }
+
+  // ---------------------------------------------------------------- hours
+  function expandDays(spec) {
+    var parts = spec.split("-");
+    if (parts.length === 1) return [parts[0]];
+    var a = DAY_ORDER.indexOf(parts[0]), b = DAY_ORDER.indexOf(parts[1]);
+    return DAY_ORDER.slice(a, b + 1);
+  }
+
+  function formatTime(t) {
+    var h = parseInt(t.slice(0, 2), 10), m = t.slice(3, 5);
+    var suffix = h >= 12 ? "pm" : "am", h12 = h % 12 === 0 ? 12 : h % 12;
+    return h12 + (m === "00" ? "" : ":" + m) + suffix;
+  }
+
+  function formatHours(line) {
+    if (line.hours === "24/7") return "24/7";
+    if (!line.hours) return line.hoursNote || "Hours not listed";
+    return line.hours.map(function (w) {
+      return w.days.replace("-", "–") + " " + formatTime(w.from) + "–" + formatTime(w.to);
+    }).join(", ");
+  }
+
+  // UK weekday + minutes since midnight for a given instant.
+  function londonNow(date) {
+    var parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/London", weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+    }).formatToParts(date);
+    var o = {};
+    parts.forEach(function (p) { o[p.type] = p.value; });
+    return { day: o.weekday, minutes: parseInt(o.hour, 10) % 24 * 60 + parseInt(o.minute, 10) };
+  }
+
+  // true = open, false = closed, null = we don't know (no badge shown).
+  function isOpenNow(line, date) {
+    if (line.hours === "24/7") return true;
+    if (!line.hours) return null;
+    var now = londonNow(date || new Date());
+    return line.hours.some(function (w) {
+      var toMin = function (t) { return parseInt(t.slice(0, 2), 10) * 60 + parseInt(t.slice(3, 5), 10); };
+      return expandDays(w.days).indexOf(now.day) !== -1 && now.minutes >= toMin(w.from) && now.minutes < toMin(w.to);
+    });
+  }
+
+  // ---------------------------------------------------------------- results
+  function telHref(number) {
+    var n = number.replace(/\(0\)/g, "").replace(/[^\d+]/g, "");
+    return "tel:" + n;
+  }
+
+  function menuLabel(step) { return /^\d$/.test(step) ? "Press " + step : step; }
+
+  function describeLine(insurer, key, menu) {
+    var line = insurer.lines[key];
+    return {
+      lineKey: key,
+      number: line.number,
+      tel: telHref(line.number),
+      team: line.team || "",
+      hoursText: formatHours(line),
+      hours: line.hours,
+      line: line,
+      menu: (menu || []).map(menuLabel)
+    };
+  }
+
+  function buildResult(insurer, route, state) {
+    var main = describeLine(insurer, route.line, route.menu);
+    var line = insurer.lines[route.line];
+    var tips = [].concat(route.tips || [], route.transfer ? [DATA.transferTip] : [], line.tips || [], insurer.tips || []);
+    var haveReady = route.haveReady ||
+      (state.query && DATA.haveReadyDefaults[state.query]) || [];
+    var alt = route.alternative ? describeLine(insurer, route.alternative.line, route.alternative.menu) : null;
+    if (alt) alt.label = route.alternative.label;
+    return {
+      routeId: route.id,
+      insurerId: insurer.id,
+      insurerName: insurer.name,
+      main: main,
+      covers: route.covers || "",
+      tips: tips,
+      haveReady: haveReady,
+      alternative: alt,
+      needsVerification: !!route.needsVerification,
+      verifyNote: route.verifyNote || ""
+    };
+  }
+
+  // Human labels for the answers that lead to a route (for the table/CSV/debug).
+  function labelFor(qid, value) {
+    var def = DATA.questions[qid];
+    for (var i = 0; i < def.options.length; i++) if (def.options[i].value === value) return def.options[i].label;
+    return value;
+  }
+  function whenLabels(insurer, route) {
+    var query = "", followUps = [];
+    insurer.questions.forEach(function (q) {
+      var cond = route.when[q];
+      if (cond === undefined) return;
+      var labels = (Array.isArray(cond) ? cond : [cond]).map(function (v) { return labelFor(q, v); });
+      if (q === "query") query = labels.join("; ");
+      else followUps.push((DATA.questions[q].shortTitle || DATA.questions[q].title.replace(/\?$/, "")) + ": " + labels.join(" / "));
+    });
+    if (!query) query = route.covers || "All queries";
+    return { query: query, followUp: followUps.join("; ") };
+  }
+
+  // Every complete path through the wizard: [{ state, step }].
+  function enumeratePaths() {
+    var out = [];
+    function walk(state, depth) {
+      var step = getStep(state);
+      if (depth > 20) { out.push({ state: state, step: { type: "error", message: "too deep" } }); return; }
+      if (step.type === "question") {
+        if (!step.options.length) { out.push({ state: state, step: { type: "error", message: "question with no options: " + step.id } }); return; }
+        step.options.forEach(function (o) {
+          var next = Object.assign({}, state); next[step.id] = o.value; walk(next, depth + 1);
+        });
+        return;
+      }
+      out.push({ state: state, step: step });
+    }
+    DATA.insurers.forEach(function (ins) { walk({ insurer: ins.id }, 0); });
+    return out;
+  }
+
+  // Every route, in data order, with resolved details (one per table/CSV row).
+  function allRoutes() {
+    var rows = [];
+    DATA.insurers.forEach(function (ins) {
+      ins.routes.forEach(function (r) {
+        // Use the first wizard path that reaches this route for state-dependent defaults.
+        var state = { insurer: ins.id };
+        ins.questions.forEach(function (q) {
+          if (r.when[q] !== undefined) state[q] = Array.isArray(r.when[q]) ? r.when[q][0] : r.when[q];
+        });
+        var labels = whenLabels(ins, r);
+        rows.push({ insurer: ins, route: r, labels: labels, result: buildResult(ins, r, state) });
+      });
+    });
+    return rows;
+  }
+
+  function stateToParams(state) {
+    var out = {};
+    STATE_KEYS.forEach(function (k) { if (state[k] !== undefined) out[k] = state[k]; });
+    return out;
+  }
+
+  return {
+    DATA: DATA,
+    STATE_KEYS: STATE_KEYS,
+    getInsurer: getInsurer,
+    getStep: getStep,
+    sanitize: sanitize,
+    answeredPath: answeredPath,
+    parentState: parentState,
+    maxRemaining: maxRemaining,
+    formatHours: formatHours,
+    isOpenNow: isOpenNow,
+    telHref: telHref,
+    labelFor: labelFor,
+    enumeratePaths: enumeratePaths,
+    allRoutes: allRoutes,
+    stateToParams: stateToParams
+  };
+});
+
+</script>
+<script>
+(function () {
+  "use strict";
+  var E = window.IPF_ENGINE, D = E.DATA;
+  // Build output sets window.__IPF_LOGOS__ = { insurerId: dataURI }. In source we try the files directly.
+  var LOGOS = window.__IPF_LOGOS__ || null;
+  var embedded = (function () { try { return window.parent !== window; } catch (e) { return true; } })();
+  var state = {};
+  var badgeEls = [];
+
+  var stepEl = document.getElementById("ipf-step");
+  var liveEl = document.getElementById("ipf-live");
+  var backEl = document.getElementById("ipf-back");
+  var progressEl = document.getElementById("ipf-progress");
+
+  // ------------------------------------------------------------ DOM helper
+  function h(tag, attrs, children) {
+    var el = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === "class") el.className = v;
+      else if (k === "text") el.textContent = v;
+      else if (k.slice(0, 2) === "on") el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? "" : v);
+    });
+    (children || []).forEach(function (c) {
+      if (c === null || c === undefined || c === false) return;
+      el.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    });
+    return el;
+  }
+
+  // Text with e-mail addresses turned into mailto: links.
+  function richText(text) {
+    var frag = document.createDocumentFragment(), re = /[\w.+-]+@[\w-]+(\.[\w-]+)+/g, last = 0, m;
+    while ((m = re.exec(text))) {
+      if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+      frag.appendChild(h("a", { href: "mailto:" + m[0], target: "_top", text: m[0] }));
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+    return frag;
+  }
+
+  function logo(insurer) {
+    var box = h("span", { class: "ipf-logo" });
+    function initials() { box.className = "ipf-logo is-initials"; box.textContent = insurer.initials || insurer.name.slice(0, 2); box.setAttribute("aria-hidden", "true"); }
+    if (LOGOS) {
+      if (LOGOS[insurer.id]) box.appendChild(h("img", { src: LOGOS[insurer.id], alt: insurer.name + " logo" }));
+      else initials();
+      return box;
+    }
+    // Source mode: try assets/logos/<id>.svg, then .png, then initials.
+    var exts = ["svg", "png"], i = 0;
+    var img = h("img", { alt: insurer.name + " logo" });
+    img.addEventListener("error", function () {
+      i++;
+      if (i < exts.length) img.src = "assets/logos/" + insurer.id + "." + exts[i];
+      else { if (img.parentNode) box.removeChild(img); initials(); }
+    });
+    img.src = "assets/logos/" + insurer.id + "." + exts[0];
+    box.appendChild(img);
+    return box;
+  }
+
+  // ------------------------------------------------------------ URL state
+  function parseSearch(search) {
+    var out = {};
+    try {
+      var p = new URLSearchParams(search || "");
+      E.STATE_KEYS.forEach(function (k) { if (p.has(k)) out[k] = p.get(k); });
+    } catch (e) {}
+    return out;
+  }
+  function initialSearch() {
+    var injected = window.__IPF_INITIAL_QUERY__;
+    if (typeof injected === "string" && injected.charAt(0) === "?") return injected;
+    try { return window.location.search; } catch (e) { return ""; }
+  }
+  function writeUrl(push) {
+    var params = E.stateToParams(state);
+    if (embedded) {
+      try { window.parent.postMessage({ type: "insurer-finder-state", params: params, keys: E.STATE_KEYS }, "*"); } catch (e) {}
+      return;
+    }
+    try {
+      var url = new URL(window.location.href);
+      E.STATE_KEYS.forEach(function (k) { url.searchParams.delete(k); });
+      Object.keys(params).forEach(function (k) { url.searchParams.set(k, params[k]); });
+      if (push) history.pushState(params, "", url.toString());
+      else history.replaceState(params, "", url.toString());
+    } catch (e) {}
+  }
+
+  // ------------------------------------------------------------ navigation
+  function go(next, opts) {
+    state = E.sanitize(next);
+    writeUrl(!(opts && opts.replace));
+    render(true);
+  }
+  function answer(id, value) {
+    var next = Object.assign({}, state); next[id] = value; go(next);
+  }
+  backEl.addEventListener("click", function () { go(E.parentState(state)); });
+  window.addEventListener("popstate", function () {
+    try { state = E.sanitize(parseSearch(window.location.search)); } catch (e) { state = {}; }
+    render(true);
+  });
+
+  // ------------------------------------------------------------ rendering
+  function heading(text) { return h("h2", { class: "ipf-heading", id: "ipf-heading", tabindex: "-1", text: text }); }
+
+  function insurerChip(insurer) {
+    return h("div", { class: "ipf-chip" }, [logo(insurer), h("span", { text: insurer.name })]);
+  }
+
+  function renderInsurerStep() {
+    var title = D.questions.insurer.title;
+    var count = h("p", { class: "sr-only", "aria-live": "polite" });
+    var empty = h("p", { class: "ipf-empty", hidden: true, text: "No insurers match. Try a different spelling." });
+    var items = D.insurers.map(function (ins) {
+      var btn = h("button", { type: "button", class: "ipf-option", onclick: function () { go({ insurer: ins.id }); } }, [
+        logo(ins),
+        h("span", { class: "ipf-option-text" }, [
+          h("span", { class: "ipf-option-label", text: ins.name }),
+          ins.hint ? h("span", { class: "ipf-option-detail", text: ins.hint }) : null
+        ])
+      ]);
+      return { ins: ins, li: h("li", null, [btn]), btn: btn };
+    });
+    var input = h("input", { id: "ipf-filter", type: "search", autocomplete: "off", spellcheck: "false", placeholder: "Start typing, e.g. AXA" });
+    input.addEventListener("input", function () {
+      var q = input.value.trim().toLowerCase(), shown = 0;
+      items.forEach(function (it) {
+        var match = !q || it.ins.name.toLowerCase().indexOf(q) !== -1 || it.ins.id.indexOf(q) !== -1;
+        it.li.hidden = !match; if (match) shown++;
+      });
+      empty.hidden = shown !== 0;
+      count.textContent = q ? shown + (shown === 1 ? " insurer" : " insurers") + " shown" : "";
+      postHeight();
+    });
+    input.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter") return;
+      var visible = items.filter(function (it) { return !it.li.hidden; });
+      if (visible.length === 1) { e.preventDefault(); visible[0].btn.click(); }
+    });
+    return [
+      heading(title),
+      h("p", { class: "ipf-sub", text: "Find the right number and phone-menu options for your query." }),
+      h("div", { class: "ipf-filter" }, [h("label", { for: "ipf-filter", text: "Filter insurers" }), input]),
+      count,
+      h("ul", { class: "ipf-options is-grid" }, items.map(function (it) { return it.li; })),
+      empty
+    ];
+  }
+
+  function renderQuestionStep(step) {
+    return [
+      insurerChip(step.insurer),
+      heading(step.title),
+      h("ul", { class: "ipf-options", style: "margin-top:14px" }, step.options.map(function (opt) {
+        return h("li", null, [h("button", { type: "button", class: "ipf-option", onclick: function () { answer(step.id, opt.value); } }, [
+          h("span", { class: "ipf-option-text" }, [
+            h("span", { class: "ipf-option-label", text: opt.label }),
+            opt.detail ? h("span", { class: "ipf-option-detail", text: opt.detail }) : null
+          ])
+        ])]);
+      }))
+    ];
+  }
+
+  function badge(line) {
+    var el = h("span", { class: "ipf-badge" });
+    badgeEls.push({ el: el, line: line });
+    updateBadge(el, line);
+    return el;
+  }
+  function updateBadge(el, line) {
+    var open = E.isOpenNow(line, new Date());
+    el.hidden = open === null;
+    el.className = "ipf-badge " + (open ? "is-open" : "is-closed");
+    el.textContent = open ? "Open now" : "Closed now";
+  }
+
+  function menuBlock(menu) {
+    if (!menu.length) return h("p", { text: "No phone-menu options listed. Tell the agent what you need." });
+    return h("ol", { class: "ipf-menu", "aria-label": "Phone-menu steps" }, menu.map(function (m) {
+      return h("li", null, [h("span", { class: "ipf-menu-step", text: m })]);
+    }));
+  }
+
+  function copyButton(text) {
+    var btn = h("button", { type: "button", class: "ipf-copy", "aria-label": "Copy number " + text, text: "Copy" });
+    btn.addEventListener("click", function () {
+      function done() { btn.textContent = "Copied"; announce("Number copied"); setTimeout(function () { btn.textContent = "Copy"; }, 2000); }
+      function fallback() {
+        try {
+          var ta = h("textarea", { readonly: true, style: "position:absolute;left:-9999px" }); ta.value = text;
+          document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); done();
+        } catch (e) { announce("Copy failed. Please select the number instead."); }
+      }
+      try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+    });
+    return btn;
+  }
+
+  function hoursBlock(line, hoursText) {
+    var known = E.isOpenNow(line, new Date()) !== null;
+    return h("div", null, [
+      h("div", { class: "ipf-hours" }, [h("span", { text: hoursText }), badge(line)]),
+      known && line.hours !== "24/7" ? h("p", { class: "ipf-note", text: "Usual hours, UK time." }) : null
+    ]);
+  }
+
+  function section(label, content) {
+    return h("div", { class: "ipf-section" }, [h("h3", { class: "ipf-label", text: label })].concat(content));
+  }
+
+  function queryLabel() {
+    return state.query ? E.labelFor("query", state.query) : "";
+  }
+
+  function renderResultStep(step) {
+    var r = step.result, m = r.main;
+    var title = "Call " + r.insurerName;
+    var main = h("div", { class: "ipf-card" }, [
+      m.team ? h("p", { class: "ipf-team", text: m.team }) : null,
+      h("div", { class: "ipf-number-row" }, [
+        h("a", { class: "ipf-number", href: m.tel, target: "_top", "aria-label": "Call " + m.number, text: m.number }),
+        copyButton(m.number)
+      ]),
+      section("Phone menu", [menuBlock(m.menu)]),
+      section("Opening hours", [hoursBlock(m.line, m.hoursText)]),
+      r.covers ? section("This line handles", [h("p", { text: r.covers })]) : null,
+      r.haveReady.length ? section("Have ready", [h("p", { text: r.haveReady.join(" · ") })]) : null,
+      r.tips.length ? section("Tips", [h("ul", { class: "ipf-list" }, r.tips.map(function (t) { return h("li", null, [richText(t)]); }))]) : null
+    ]);
+    var alt = null;
+    if (r.alternative) {
+      var a = r.alternative;
+      alt = h("div", { class: "ipf-card" }, [
+        h("h3", { class: "ipf-label", text: "Alternative number" }),
+        a.label ? h("p", { class: "ipf-team", text: a.label }) : null,
+        h("div", { class: "ipf-number-row" }, [
+          h("a", { class: "ipf-number is-small", href: a.tel, target: "_top", "aria-label": "Call " + a.number, text: a.number }),
+          copyButton(a.number)
+        ]),
+        section("Phone menu", [menuBlock(a.menu)]),
+        section("Opening hours", [hoursBlock(a.line, a.hoursText)])
+      ]);
+    }
+    return [
+      insurerChip(step.insurer),
+      heading(title),
+      queryLabel() ? h("p", { class: "ipf-sub", text: queryLabel() }) : h("p", { class: "ipf-sub", text: "Here's the number to call." }),
+      main,
+      alt,
+      h("div", { class: "ipf-actions" }, [
+        h("button", { type: "button", class: "ipf-btn", onclick: function () { go(E.parentState(state)); } }, [h("span", { "aria-hidden": "true", text: "← " }), "Back"]),
+        h("button", { type: "button", class: "ipf-btn is-primary", onclick: function () { go({}); }, text: "Start over" })
+      ]),
+      h("p", { class: "ipf-cta" }, [D.cta.text + " ", h("a", { href: D.cta.url, target: "_top", text: D.cta.linkText })])
+    ];
+  }
+
+  function renderError(step) {
+    return [heading("Sorry, something went wrong"), h("p", { text: "Please start over." }),
+      h("button", { type: "button", class: "ipf-btn is-primary", onclick: function () { go({}); }, text: "Start over" })];
+  }
+
+  function announce(text) { liveEl.textContent = ""; setTimeout(function () { liveEl.textContent = text; }, 30); }
+
+  function render(moveFocus) {
+    var step = E.getStep(state);
+    badgeEls = [];
+    var nodes = step.type === "insurer" ? renderInsurerStep()
+      : step.type === "question" ? renderQuestionStep(step)
+      : step.type === "result" ? renderResultStep(step) : renderError(step);
+    stepEl.textContent = "";
+    nodes.forEach(function (n) { if (n) stepEl.appendChild(n); });
+
+    // Progress + back
+    var done = E.answeredPath(state).length;
+    var pct = step.type === "result" ? 100 : Math.round(done / (done + E.maxRemaining(state) + 1) * 100);
+    pct = Math.max(pct, 4);
+    progressEl.firstElementChild.style.width = pct + "%";
+    progressEl.setAttribute("aria-valuenow", String(pct));
+    backEl.disabled = step.type === "insurer";
+
+    var stepNo = done + 1;
+    announce(step.type === "result"
+      ? "Result: call " + step.result.insurerName + " on " + step.result.main.number
+      : "Step " + stepNo + ": " + (step.title || ""));
+    if (moveFocus) {
+      var hd = document.getElementById("ipf-heading");
+      if (hd) try { hd.focus({ preventScroll: embedded }); } catch (e) { hd.focus(); }
+    }
+    postHeight();
+  }
+
+  // ------------------------------------------------------------ footer
+  document.getElementById("ipf-footer").textContent = "Last checked: " + D.lastChecked + " · " + D.disclaimer;
+
+  // ------------------------------------------------------------ iframe height
+  var lastHeight = 0;
+  function postHeight() {
+    if (!embedded) return;
+    var height = Math.ceil(document.documentElement.getBoundingClientRect().height);
+    if (height === lastHeight) return;
+    lastHeight = height;
+    try { window.parent.postMessage({ type: "insurer-finder-height", height: height }, "*"); } catch (e) {}
+  }
+  if (embedded) {
+    try { new ResizeObserver(postHeight).observe(document.body); } catch (e) { setInterval(postHeight, 500); }
+    window.addEventListener("load", postHeight);
+  }
+
+  // Refresh open/closed badges every minute.
+  setInterval(function () { badgeEls.forEach(function (b) { updateBadge(b.el, b.line); }); }, 60000);
+
+  // ------------------------------------------------------------ start
+  state = E.sanitize(parseSearch(initialSearch()));
+  if (Object.keys(state).length) writeUrl(false);
+  render(false);
+
+  })();
+</script>
+</body>
+</html>

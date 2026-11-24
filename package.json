@@ -1,0 +1,14 @@
+{
+  "name": "effra-insurer-phone-finder",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Step-by-step tool that helps UK private-clinic staff find the right insurer phone number and phone-menu options.",
+  "scripts": {
+    "build": "node build.js",
+    "build:framer": "node build.js --framer",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
