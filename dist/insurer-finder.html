@@ -87,7 +87,6 @@ h1, h2, h3 { line-height: 1.25; margin: 0; }
 .ipf-number-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 2px 0 14px; }
 .ipf-number { font-size: clamp(1.7rem, 7.5vw, 2.3rem); font-weight: 700; color: var(--ipf-primary); text-decoration: none; letter-spacing: .01em; font-variant-numeric: tabular-nums; }
 .ipf-number:hover { text-decoration: underline; }
-.ipf-number.is-small { font-size: 1.3rem; }
 .ipf-copy { border: 1px solid var(--ipf-primary); background: var(--ipf-bg); color: var(--ipf-primary); border-radius: var(--ipf-radius-sm); padding: 6px 14px; min-height: 40px; font-weight: 600; }
 .ipf-copy:hover { background: var(--ipf-primary-soft); }
 .ipf-section { margin-top: 14px; }
@@ -98,6 +97,23 @@ h1, h2, h3 { line-height: 1.25; margin: 0; }
 .ipf-menu li + li::before { content: "→"; color: var(--ipf-muted); font-weight: 700; }
 .ipf-menu-step { background: var(--ipf-primary); color: var(--ipf-primary-text); border-radius: var(--ipf-radius-sm); padding: 6px 12px; font-weight: 600; }
 
+/* Other lines: secondary, below the main card */
+.ipf-others { margin-top: 12px; border: 1px solid var(--ipf-border); border-radius: var(--ipf-radius); background: var(--ipf-bg); }
+.ipf-others > summary { cursor: pointer; padding: 12px 40px 12px 16px; position: relative; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-weight: 600; font-size: .95rem; list-style: none; }
+.ipf-others > summary::-webkit-details-marker { display: none; }
+.ipf-others > summary::after { content: ""; position: absolute; right: 18px; top: 50%; width: 8px; height: 8px; border-right: 2px solid var(--ipf-muted); border-bottom: 2px solid var(--ipf-muted); transform: translateY(-70%) rotate(45deg); }
+.ipf-others[open] > summary::after { transform: translateY(-30%) rotate(-135deg); }
+.ipf-others > summary:focus-visible { outline-offset: -3px; border-radius: var(--ipf-radius); }
+.ipf-others .ipf-note { font-weight: 400; }
+.ipf-others-list { list-style: none; margin: 0; padding: 0 16px 6px; }
+.ipf-other { padding: 12px 0; border-top: 1px solid var(--ipf-border); font-size: .92rem; }
+.ipf-other-label { margin: 0 0 2px; color: var(--ipf-muted); }
+.ipf-number-row.is-compact { margin: 0 0 8px; gap: 8px 12px; }
+.ipf-number.is-small { font-size: 1.15rem; }
+.ipf-other .ipf-copy { min-height: 36px; padding: 4px 12px; font-size: .88rem; }
+.ipf-menu.is-compact .ipf-menu-step { background: var(--ipf-primary-soft); color: var(--ipf-primary); padding: 3px 10px; font-size: .88rem; }
+.ipf-other-hours { margin-top: 8px; }
+.ipf-other-hours .ipf-note { margin: 4px 0 0; }
 .ipf-hours { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .ipf-badge { display: inline-block; font-size: .8rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
 .ipf-badge.is-open { color: var(--ipf-open); background: var(--ipf-open-bg); }
@@ -171,14 +187,17 @@ window.__IPF_INITIAL_QUERY__ = "__IPF_INITIAL_QUERY__";
  *    tips               (optional) Extra tips for this route only.
  *    haveReady          (optional) Overrides the default "Have ready" list.
  *    transfer           (optional) true = add the "ask to be transferred" tip.
- *    alternative        (optional) { line, menu, label } A second number to offer.
+ *    alternatives       (optional) List of other numbers to offer, each
+ *                       { line, menu, label }. Shown below the main number in
+ *                       a secondary "Other … lines" section.
  *    needsVerification  true = we made an assumption. Listed in VERIFY.md.
  *    verifyNote         Short note on what needs checking (shown in ?debug=1).
  *
  *  LINE FIELDS
  *    number     Exactly as it should be displayed.
  *    team       (optional) Team name shown under the number.
- *    hours      "24/7", or null if our source gives no hours, or a list of
+ *    hours      "24/7", or null if our source gives no hours (the hours line is
+ *               then hidden, with no open/closed badge), or a list of
  *               { days: "Mon-Fri", from: "09:00", to: "17:00" }
  *               (days: Mon Tue Wed Thu Fri Sat Sun, a range "Mon-Fri", or "Sat").
  *               Times are UK time, 24-hour clock. Bank holidays are not modelled.
@@ -235,8 +254,8 @@ var IPF_DATA = {
       initials: "Al",
       lines: {
         main: { number: "+353 163 01301", hours: "24/7" },
-        second: { number: "+353 160 1300", hours: null,
-                  hoursNote: "Hours and purpose not listed" }
+        // Accepted by Effra: purpose and hours unknown.
+        second: { number: "+353 160 1300", hours: null }
       },
       questions: [],
       routes: [
@@ -246,9 +265,7 @@ var IPF_DATA = {
           line: "main",
           menu: [],
           haveReady: ["Patient's membership number"],
-          alternative: { line: "second", menu: [], label: "Other Allianz number" },
-          needsVerification: true,
-          verifyNote: "Source gives no purpose for either number, and no hours for the second."
+          alternatives: [{ line: "second", menu: [], label: "Other Allianz number" }]
         }
       ]
     },
@@ -289,6 +306,7 @@ var IPF_DATA = {
           hours: [{ days: "Mon-Fri", from: "09:00", to: "17:00" }],
           tips: ["Wait times are usually shortest between 3pm and 5pm."]
         },
+        // Accepted by Effra: hours unknown for these two lines.
         bristol: { number: "0800 854929", team: "AXA Bristol Team", hours: null },
         hol: { number: "0345 600 7696", team: "Health-on-Line Team",
                hours: [{ days: "Mon-Fri", from: "08:00", to: "18:00" }] },
@@ -313,9 +331,7 @@ var IPF_DATA = {
           id: "axa-invoice-account-stp",
           when: { query: "invoice", invoiceType: "account", policy: "stp" },
           line: "bristol", menu: [],
-          haveReady: ["Patient's policy number", "Invoice number"],
-          needsVerification: true,
-          verifyNote: "No hours given for the AXA Bristol Team; no menu options given."
+          haveReady: ["Patient's policy number", "Invoice number"]
         },
         {
           id: "axa-invoice-account-hol",
@@ -327,9 +343,7 @@ var IPF_DATA = {
           id: "axa-invoice-account-other",
           when: { query: "invoice", invoiceType: "account", policy: ["other", "unknown"] },
           line: "accountOther", menu: [],
-          haveReady: ["Patient's policy number", "Invoice number"],
-          needsVerification: true,
-          verifyNote: "No hours given for 020 4626 3233."
+          haveReady: ["Patient's policy number", "Invoice number"]
         },
         // Provider account services (payment / remittance route)
         {
@@ -338,7 +352,7 @@ var IPF_DATA = {
           line: "bristol", menu: [],
           haveReady: ["Patient's policy number", "Invoice number"],
           needsVerification: true,
-          verifyNote: "Payment queries sent to account services, not Op 1 → Op 2 ('amount AXA paid'). No hours for Bristol Team."
+          verifyNote: "Payment queries sent to account services, not Op 1 → Op 2 ('amount AXA paid')."
         },
         {
           id: "axa-payment-hol",
@@ -354,7 +368,7 @@ var IPF_DATA = {
           line: "accountOther", menu: [],
           haveReady: ["Patient's policy number", "Invoice number"],
           needsVerification: true,
-          verifyNote: "Payment queries sent to account services, not Op 1 → Op 2. No hours for 020 4626 3233."
+          verifyNote: "Payment queries sent to account services, not Op 1 → Op 2 ('amount AXA paid')."
         },
         {
           id: "axa-cover",
@@ -482,34 +496,28 @@ var IPF_DATA = {
         individual: { number: "+44 1475 788 182", team: "Cigna Individual", hours: "24/7" },
         northAmerica: { number: "+1 800 441 2668", team: "Cigna North America", hours: null,
                         hoursNote: "Open from 1pm UK time" },
-        general: { number: "+32 3 293 1811", team: "General number for UK clinics", hours: null },
-        globalEmployer: { number: "+44 1475 492 197", team: "Cigna Global Employer Health (EU)", hours: null }
+        general: { number: "+32 3 293 1811", team: "General number for UK clinics", hours: null }
       },
       questions: ["memberId", "query"],
       routes: [
         {
           id: "cigna-eu-payment", when: { memberId: "eu", query: "payment" },
           line: "eu", menu: ["1"],
-          haveReady: ["Patient's member ID", "Invoice number"],
-          alternative: { line: "globalEmployer", menu: [], label: "For Cigna Global Employer Health policies in the EU" },
-          needsVerification: true,
-          verifyNote: "Placement of the Global Employer Health (EU) number is assumed."
+          haveReady: ["Patient's member ID", "Invoice number"]
         },
         {
           id: "cigna-eu-preauth", when: { memberId: "eu", query: "preauth" },
           line: "eu", menu: ["2"],
           haveReady: ["Patient's member ID"],
-          alternative: { line: "globalEmployer", menu: [], label: "For Cigna Global Employer Health policies in the EU" },
           needsVerification: true,
-          verifyNote: "Option 2 is 'pre-admission checks', read as pre-authorisation. Global Employer Health placement assumed."
+          verifyNote: "Option 2 is 'pre-admission checks', read as pre-authorisation."
         },
         {
           id: "cigna-eu-provider", when: { memberId: "eu", query: ["invoice", "cover", "other"] },
           line: "eu", menu: ["3"],
           haveReady: ["Patient's member ID"],
-          alternative: { line: "globalEmployer", menu: [], label: "For Cigna Global Employer Health policies in the EU" },
           needsVerification: true,
-          verifyNote: "Invoice and cover queries sent to option 3 (provider team). Global Employer Health placement assumed."
+          verifyNote: "Invoice and cover queries sent to option 3 (provider team)."
         },
         {
           id: "cigna-individual", when: { memberId: "individual" },
@@ -567,15 +575,20 @@ var IPF_DATA = {
       routes: [
         { id: "vitality-invoice", when: { query: "invoice" }, line: "main", menu: ["3", "1"] },
         { id: "vitality-preauth-urgent", when: { query: "preauth", urgent: "yes" }, line: "main", menu: ["3", "2"] },
-        { id: "vitality-preauth", when: { query: "preauth", urgent: "no" }, line: "main", menu: ["3"] },
+        // Confirmed by Effra (Nov 2026); source doc says option 3 only.
+        { id: "vitality-preauth", when: { query: "preauth", urgent: "no" }, line: "main", menu: ["3", "3"] },
         {
-          id: "vitality-provider", when: { query: ["payment", "cover", "other"] }, line: "main", menu: ["3"],
+          // Confirmed by Effra (Nov 2026); source doc says option 3 only.
+          id: "vitality-provider", when: { query: ["payment", "cover", "other"] }, line: "main", menu: ["3", "3"],
           covers: "Other provider questions, e.g. patient cover, authorisation, remittances, invoices"
         }
       ]
     },
 
     // ---------------------------------------------------------------------- WPA
+    // WPA has three overlapping lines (accepted by Effra). Every route lists the
+    // other two lines as alternatives so staff can try another line if needed.
+    // Hours for 01823 625278 and 01823 625000 are unknown (accepted by Effra).
     {
       id: "wpa",
       name: "WPA",
@@ -591,48 +604,76 @@ var IPF_DATA = {
         {
           id: "wpa-invoice-one", when: { query: "invoice", invoiceCount: "one" },
           line: "provider", menu: ["4", "3"],
-          alternative: { line: "billing", menu: ["4"], label: "Billing & payment queries line" },
-          needsVerification: true,
-          verifyNote: "Overlaps with 01823 625278 option 4; 625170 chosen as primary because hours are known."
+          alternatives: [
+            { line: "billing", menu: ["4"], label: "Invoicing & payment queries" },
+            { line: "claims",  menu: ["1"], label: "Treatment or claim queries" }
+          ]
         },
         {
           id: "wpa-invoice-several", when: { query: "invoice", invoiceCount: "several" },
           line: "provider", menu: ["4", "1"],
-          alternative: { line: "billing", menu: ["4"], label: "Billing & payment queries line" },
-          needsVerification: true,
-          verifyNote: "Overlaps with 01823 625278 option 4; 625170 chosen as primary because hours are known."
+          alternatives: [
+            { line: "billing", menu: ["4"], label: "Invoicing & payment queries" },
+            { line: "claims",  menu: ["1"], label: "Treatment or claim queries" }
+          ]
         },
         {
           id: "wpa-payment", when: { query: "payment" },
           line: "billing", menu: ["4"],
           tips: ["For a payment dispute, email ageddebt@wpa.org.uk. To follow up by phone, call 01823 625170 and ask to be routed to that team."],
-          needsVerification: true,
-          verifyNote: "No hours for 01823 625278. No dedicated line for payment disputes."
+          alternatives: [
+            { line: "provider", menu: ["4"], label: "Invoice queries" },
+            { line: "claims",   menu: ["1"], label: "Treatment or claim queries" }
+          ]
         },
         {
           id: "wpa-preauth", when: { query: "preauth" },
           line: "provider", menu: ["2"],
-          alternative: { line: "billing", menu: ["2"], label: "Billing & payment queries line" },
-          needsVerification: true,
-          verifyNote: "Overlaps with 01823 625278 option 2; 625170 chosen as primary."
+          alternatives: [
+            { line: "billing", menu: ["2"], label: "Pre-authorisation" },
+            { line: "claims",  menu: ["1"], label: "Treatment or claim queries" }
+          ]
         },
-        { id: "wpa-cover", when: { query: "cover" }, line: "provider", menu: ["3"] },
+        {
+          id: "wpa-cover", when: { query: "cover" },
+          line: "provider", menu: ["3"],
+          alternatives: [
+            { line: "claims",  menu: ["1"], label: "Treatment or claim queries" },
+            { line: "billing", menu: [],    label: "Billing & payment queries line" }
+          ]
+        },
         {
           id: "wpa-submit", when: { query: "submit" },
           line: "claims", menu: ["3"],
-          alternative: { line: "provider", menu: ["4"], label: "Provider line (invoice query / submit invoice)" },
-          needsVerification: true,
-          verifyNote: "Overlaps with 01823 625170 option 4. No hours for 01823 625000."
+          alternatives: [
+            { line: "provider", menu: ["4"], label: "Invoice query or submitting an invoice" },
+            { line: "billing",  menu: ["4"], label: "Invoicing & payment queries" }
+          ]
         },
-        { id: "wpa-contract", when: { query: "contract" }, line: "provider", menu: ["5"] },
-        { id: "wpa-details", when: { query: "details" }, line: "provider", menu: ["6"] },
+        {
+          id: "wpa-contract", when: { query: "contract" },
+          line: "provider", menu: ["5"],
+          alternatives: [
+            { line: "billing", menu: [], label: "Billing & payment queries line" },
+            { line: "claims",  menu: [], label: "Treatment, claims and invoice submission line" }
+          ]
+        },
+        {
+          id: "wpa-details", when: { query: "details" },
+          line: "provider", menu: ["6"],
+          alternatives: [
+            { line: "billing", menu: [], label: "Billing & payment queries line" },
+            { line: "claims",  menu: [], label: "Treatment, claims and invoice submission line" }
+          ]
+        },
         {
           id: "wpa-other", when: { query: "other" },
           line: "provider", menu: [],
           transfer: true,
-          alternative: { line: "claims", menu: ["1"], label: "For treatment or claim queries" },
-          needsVerification: true,
-          verifyNote: "01823 625000 option 1 (treatment/claim queries) offered as the alternative here."
+          alternatives: [
+            { line: "claims",  menu: ["1"], label: "Treatment or claim queries" },
+            { line: "billing", menu: [],    label: "Billing & payment queries line" }
+          ]
         }
       ]
     }
@@ -834,7 +875,7 @@ else { window.IPF_DATA = IPF_DATA; }
 
   function formatHours(line) {
     if (line.hours === "24/7") return "24/7";
-    if (!line.hours) return line.hoursNote || "Hours not listed";
+    if (!line.hours) return line.hoursNote || "";
     return line.hours.map(function (w) {
       return w.days.replace("-", "–") + " " + formatTime(w.from) + "–" + formatTime(w.to);
     }).join(", ");
@@ -889,8 +930,11 @@ else { window.IPF_DATA = IPF_DATA; }
     var tips = [].concat(route.tips || [], route.transfer ? [DATA.transferTip] : [], line.tips || [], insurer.tips || []);
     var haveReady = route.haveReady ||
       (state.query && DATA.haveReadyDefaults[state.query]) || [];
-    var alt = route.alternative ? describeLine(insurer, route.alternative.line, route.alternative.menu) : null;
-    if (alt) alt.label = route.alternative.label;
+    var alternatives = (route.alternatives || []).map(function (a) {
+      var d = describeLine(insurer, a.line, a.menu);
+      d.label = a.label || "";
+      return d;
+    });
     return {
       routeId: route.id,
       insurerId: insurer.id,
@@ -899,7 +943,7 @@ else { window.IPF_DATA = IPF_DATA; }
       covers: route.covers || "",
       tips: tips,
       haveReady: haveReady,
-      alternative: alt,
+      alternatives: alternatives,
       needsVerification: !!route.needsVerification,
       verifyNote: route.verifyNote || ""
     };
@@ -1171,9 +1215,9 @@ else { window.IPF_DATA = IPF_DATA; }
     el.textContent = open ? "Open now" : "Closed now";
   }
 
-  function menuBlock(menu) {
+  function menuBlock(menu, compact) {
     if (!menu.length) return h("p", { text: "No phone-menu options listed. Tell the agent what you need." });
-    return h("ol", { class: "ipf-menu", "aria-label": "Phone-menu steps" }, menu.map(function (m) {
+    return h("ol", { class: "ipf-menu" + (compact ? " is-compact" : ""), "aria-label": "Phone-menu steps" }, menu.map(function (m) {
       return h("li", null, [h("span", { class: "ipf-menu-step", text: m })]);
     }));
   }
@@ -1205,6 +1249,10 @@ else { window.IPF_DATA = IPF_DATA; }
     return h("div", { class: "ipf-section" }, [h("h3", { class: "ipf-label", text: label })].concat(content));
   }
 
+  function isWide() {
+    try { return window.matchMedia("(min-width: 600px)").matches; } catch (e) { return false; }
+  }
+
   function queryLabel() {
     return state.query ? E.labelFor("query", state.query) : "";
   }
@@ -1219,23 +1267,31 @@ else { window.IPF_DATA = IPF_DATA; }
         copyButton(m.number)
       ]),
       section("Phone menu", [menuBlock(m.menu)]),
-      section("Opening hours", [hoursBlock(m.line, m.hoursText)]),
+      m.hoursText ? section("Opening hours", [hoursBlock(m.line, m.hoursText)]) : null,
       r.covers ? section("This line handles", [h("p", { text: r.covers })]) : null,
       r.haveReady.length ? section("Have ready", [h("p", { text: r.haveReady.join(" · ") })]) : null,
       r.tips.length ? section("Tips", [h("ul", { class: "ipf-list" }, r.tips.map(function (t) { return h("li", null, [richText(t)]); }))]) : null
     ]);
-    var alt = null;
-    if (r.alternative) {
-      var a = r.alternative;
-      alt = h("div", { class: "ipf-card" }, [
-        h("h3", { class: "ipf-label", text: "Alternative number" }),
-        a.label ? h("p", { class: "ipf-team", text: a.label }) : null,
-        h("div", { class: "ipf-number-row" }, [
-          h("a", { class: "ipf-number is-small", href: a.tel, target: "_top", "aria-label": "Call " + a.number, text: a.number }),
-          copyButton(a.number)
+    // Other lines: visually secondary, collapsed by default on narrow screens.
+    var others = null;
+    if (r.alternatives.length) {
+      var many = r.alternatives.length > 1;
+      others = h("details", { class: "ipf-others", open: isWide() }, [
+        h("summary", null, [
+          h("span", { text: "Other " + r.insurerName + (many ? " lines (" + r.alternatives.length + ")" : " number") }),
+          h("span", { class: "ipf-note", text: "If the number above can't help" })
         ]),
-        section("Phone menu", [menuBlock(a.menu)]),
-        section("Opening hours", [hoursBlock(a.line, a.hoursText)])
+        h("ul", { class: "ipf-others-list" }, r.alternatives.map(function (a) {
+          return h("li", { class: "ipf-other" }, [
+            a.label ? h("p", { class: "ipf-other-label", text: a.label }) : null,
+            h("div", { class: "ipf-number-row is-compact" }, [
+              h("a", { class: "ipf-number is-small", href: a.tel, target: "_top", "aria-label": "Call " + a.number, text: a.number }),
+              copyButton(a.number)
+            ]),
+            a.menu.length ? menuBlock(a.menu, true) : h("p", { class: "ipf-note", text: "No phone-menu options listed. Tell the agent what you need." }),
+            a.hoursText ? h("div", { class: "ipf-other-hours" }, [hoursBlock(a.line, a.hoursText)]) : null
+          ]);
+        }))
       ]);
     }
     return [
@@ -1243,18 +1299,18 @@ else { window.IPF_DATA = IPF_DATA; }
       heading(title),
       queryLabel() ? h("p", { class: "ipf-sub", text: queryLabel() }) : h("p", { class: "ipf-sub", text: "Here's the number to call." }),
       main,
-      alt,
+      others,
       h("div", { class: "ipf-actions" }, [
         h("button", { type: "button", class: "ipf-btn", onclick: function () { go(E.parentState(state)); } }, [h("span", { "aria-hidden": "true", text: "← " }), "Back"]),
-        h("button", { type: "button", class: "ipf-btn is-primary", onclick: function () { go({}); }, text: "Start over" })
+        h("button", { type: "button", class: "ipf-btn is-primary", onclick: function () { go({}); }, text: "Return to main menu" })
       ]),
       h("p", { class: "ipf-cta" }, [D.cta.text + " ", h("a", { href: D.cta.url, target: "_top", text: D.cta.linkText })])
     ];
   }
 
   function renderError(step) {
-    return [heading("Sorry, something went wrong"), h("p", { text: "Please start over." }),
-      h("button", { type: "button", class: "ipf-btn is-primary", onclick: function () { go({}); }, text: "Start over" })];
+    return [heading("Sorry, something went wrong"), h("p", { text: "Please return to the main menu and try again." }),
+      h("button", { type: "button", class: "ipf-btn is-primary", onclick: function () { go({}); }, text: "Return to main menu" })];
   }
 
   function announce(text) { liveEl.textContent = ""; setTimeout(function () { liveEl.textContent = text; }, 30); }

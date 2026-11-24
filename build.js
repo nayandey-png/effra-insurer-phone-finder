@@ -215,11 +215,11 @@ function routeRows() {
     var notes = [];
     if (r.covers) notes.push("This line handles: " + r.covers + ".");
     r.tips.forEach(function (t) { notes.push(t); });
-    var alt = "";
-    if (r.alternative) {
-      var a = r.alternative;
-      alt = a.label + ": " + a.number + (a.menu.length ? " (" + a.menu.join(", then ") + ")" : "") + ", " + a.hoursText;
-    }
+    var alts = r.alternatives.map(function (a) {
+      return (a.label ? a.label + ": " : "") + a.number +
+        (a.menu.length ? " (" + a.menu.join(", then ") + ")" : "") +
+        (a.hoursText ? ", " + a.hoursText : "");
+    });
     return {
       routeId: r.routeId,
       insurerId: r.insurerId,
@@ -232,9 +232,7 @@ function routeRows() {
       menu: m.menu.length ? m.menu.join(", then ") : "No menu options listed",
       hours: m.hoursText,
       tips: notes,
-      alternative: alt,
-      alternativeTel: r.alternative ? r.alternative.tel : "",
-      alternativeNumber: r.alternative ? r.alternative.number : ""
+      alternatives: alts
     };
   });
 }
@@ -256,7 +254,7 @@ function buildTable() {
     mine.forEach(function (r) {
       var numberCell = '<a href="' + escapeHtml(r.tel) + '">' + escapeHtml(r.number) + "</a>" + (r.team ? "<br>" + escapeHtml(r.team) : "");
       var tips = r.tips.slice();
-      if (r.alternative) tips.push("Alternative: " + r.alternative);
+      r.alternatives.forEach(function (a) { tips.push("Other " + r.insurer + " line: " + a); });
       var tipsCell = tips.length ? "<ul>" + tips.map(function (t) { return "<li>" + escapeHtml(t) + "</li>"; }).join("") + "</ul>" : "";
       out.push('<tr data-route="' + escapeHtml(r.routeId) + '">' +
         '<th scope="row">' + escapeHtml(r.query) + "</th>" +
@@ -286,7 +284,7 @@ function buildCsv() {
   var lines = [CSV_COLUMNS.join(",")];
   rows.forEach(function (r) {
     lines.push([r.routeId, r.insurer, r.query, r.followUp, r.number, r.team, r.menu, r.hours,
-      r.tips.join(" "), r.alternative, E.DATA.lastChecked].map(csvCell).join(","));
+      r.tips.join(" "), r.alternatives.join("; "), E.DATA.lastChecked].map(csvCell).join(","));
   });
   return lines.join("\r\n") + "\r\n";
 }

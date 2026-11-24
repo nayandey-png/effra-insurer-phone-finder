@@ -13,6 +13,13 @@ var SOURCE_NUMBERS = [
   "0800 015 0107", "+353 163 01301", "+353 160 1300", "01475 492145", "+44 1475 788 182", "+1 800 441 2668",
   "+32 3 293 1811", "+44 1475 492 197", "020 3376 3907"
 ];
+// Numbers in the source document that are deliberately NOT in the tool, table or CSV.
+// Each needs a reason. The checks below make sure they stay out.
+var EXCLUDED_SOURCE_NUMBERS = {
+  // Cigna Global Employer Health (EU). Removed at Effra's request (Nov 2026):
+  // the source doesn't say when clinics should use it.
+  "+44 1475 492 197": "Removed by Effra: usage unclear"
+};
 var digits = function (s) { return s.replace(/\(0\)/g, "").replace(/\D/g, ""); };
 
 function deepStrings(obj, out) {
@@ -39,11 +46,10 @@ test("every path ends at a result with a number (no dead ends)", function () {
     var r = p.step.result;
     assert.ok(r.main.number && r.main.number.trim(), "no number on " + label);
     assert.match(r.main.tel, /^tel:\+?\d{6,15}$/, "bad tel on " + label);
-    assert.ok(r.main.hoursText, "no hours text on " + label);
     deepStrings(r).forEach(function (s) {
       assert.ok(!/\bundefined\b|\bnull\b|\bNaN\b/.test(s), "bad value '" + s + "' on " + label);
     });
-    if (r.alternative) assert.match(r.alternative.tel, /^tel:\+?\d{6,15}$/);
+    r.alternatives.forEach(function (a) { assert.match(a.tel, /^tel:\+?\d{6,15}$/); });
   });
 });
 
@@ -62,7 +68,11 @@ test("route ids are unique and lines/questions referenced exist", function () {
       assert.match(r.id, /^[a-z0-9-]+$/);
       assert.ok(ins.lines[r.line], r.id + ": unknown line " + r.line);
       assert.ok(Array.isArray(r.menu), r.id + ": menu must be a list");
-      if (r.alternative) assert.ok(ins.lines[r.alternative.line], r.id + ": unknown alternative line");
+      assert.equal(r.alternative, undefined, r.id + ": use `alternatives: [...]`, not `alternative`");
+      (r.alternatives || []).forEach(function (a) {
+        assert.ok(ins.lines[a.line], r.id + ": unknown alternative line " + a.line);
+        assert.notEqual(a.line, r.line, r.id + ": alternative repeats the main line");
+      });
       if (r.needsVerification) assert.ok(r.verifyNote, r.id + ": needsVerification without verifyNote");
       Object.keys(r.when).forEach(function (q) {
         assert.ok(ins.questions.indexOf(q) !== -1, r.id + ": when uses question not in insurer.questions: " + q);
@@ -95,8 +105,12 @@ test("no number in the data that isn't in the source document, and none missing"
   D.insurers.forEach(function (ins) { Object.keys(ins.lines).forEach(function (k) { dataNumbers.push(ins.lines[k].number); }); });
   var src = SOURCE_NUMBERS.map(digits);
   dataNumbers.forEach(function (n) { assert.ok(src.indexOf(digits(n)) !== -1, "number not in source: " + n); });
+  var excluded = Object.keys(EXCLUDED_SOURCE_NUMBERS).map(digits);
+  excluded.forEach(function (n) { assert.ok(src.indexOf(n) !== -1, "excluded number isn't in the source list: " + n); });
   SOURCE_NUMBERS.forEach(function (n) {
-    assert.ok(dataNumbers.some(function (d) { return digits(d) === digits(n); }), "source number missing from data: " + n);
+    var inData = dataNumbers.some(function (d) { return digits(d) === digits(n); });
+    if (excluded.indexOf(digits(n)) !== -1) assert.ok(!inData, "excluded number is back in the data: " + n);
+    else assert.ok(inData, "source number missing from data: " + n);
   });
 });
 
@@ -111,6 +125,13 @@ test("spot checks against the source document", function () {
   assert.deepEqual(res({ insurer: "healix", query: "preauth" }).main.menu, ["Press 1"]);
   assert.deepEqual(res({ insurer: "wpa", query: "invoice", invoiceCount: "several" }).main.menu, ["Press 4", "Press 1"]);
   assert.equal(res({ insurer: "bupa", query: "contract" }).main.hoursText, "Mon–Fri 10am–4pm");
+  // Corrections confirmed by Effra (differ from source doc):
+  assert.deepEqual(res({ insurer: "vitality", query: "preauth", urgent: "no" }).main.menu, ["Press 3", "Press 3"]);
+  ["payment", "cover", "other"].forEach(function (q) {
+    assert.deepEqual(res({ insurer: "vitality", query: q }).main.menu, ["Press 3", "Press 3"], "vitality " + q);
+  });
+  assert.equal(res({ insurer: "cigna", memberId: "eu", query: "payment" }).alternatives.length, 0);
+  assert.ok(res({ insurer: "wpa", query: "payment" }).tips.some(function (t) { return t.indexOf("ageddebt@wpa.org.uk") !== -1 && t.indexOf("01823 625170") !== -1; }));
   assert.ok(res({ insurer: "aviva" }).tips.indexOf("Go through your invoices one at a time.") !== -1);
   assert.ok(res({ insurer: "axa", query: "invoice", invoiceType: "specific" }).tips.indexOf("Go through your invoices one at a time.") !== -1);
 });
@@ -119,6 +140,25 @@ test("public copy never mentions per-call limits or holding invoices back", func
   var all = deepStrings(E.allRoutes().map(function (x) { return x.result; })).join("\n");
   assert.ok(!/\b(5|five|3|three) invoice/i.test(all));
   assert.ok(!/announce|don't mention|at a time\b(?!\.)/i.test(all.replace(/one at a time\./g, "")));
+});
+
+test("unknown hours are omitted, not labelled", function () {
+  ["axa-payment-stp", "axa-invoice-account-other", "wpa-payment", "wpa-submit", "cigna-general"].forEach(function (id) {
+    var row = E.allRoutes().filter(function (x) { return x.route.id === id; })[0];
+    assert.equal(row.result.main.hoursText, "", id);
+    assert.equal(E.isOpenNow(row.result.main.line, new Date()), null, id);
+  });
+  assert.equal(E.formatHours(E.getInsurer("cigna").lines.northAmerica), "Open from 1pm UK time");
+});
+
+test("WPA: every card shows the other WPA lines", function () {
+  var wpa = E.getInsurer("wpa");
+  var all = Object.keys(wpa.lines).map(function (k) { return wpa.lines[k].number; }).sort();
+  E.allRoutes().filter(function (x) { return x.insurer.id === "wpa"; }).forEach(function (x) {
+    var r = x.result;
+    var shown = [r.main.number].concat(r.alternatives.map(function (a) { return a.number; })).sort();
+    assert.deepEqual(shown, all, x.route.id + " should show all three WPA numbers once");
+  });
 });
 
 test("sanitize drops invalid or irrelevant URL params", function () {
@@ -210,6 +250,25 @@ test("CSV: header + one row per route, matching the data", function () {
     assert.ok(r[col("number")]);
     assert.equal(r[col("last_checked")], D.lastChecked);
   });
+});
+
+test("outputs: no 'Hours not listed', no excluded numbers, empty hours cells where unknown", function () {
+  [out.page, out.table, out.csv].forEach(function (txt) { assert.ok(txt.indexOf("Hours not listed") === -1); });
+  var everything = [out.page, out.table, out.csv, JSON.stringify(D)].join("\n");
+  Object.keys(EXCLUDED_SOURCE_NUMBERS).forEach(function (n) {
+    assert.ok(everything.indexOf(n) === -1 && everything.indexOf(digits(n)) === -1, "excluded number in output: " + n);
+  });
+  var rows = parseCsv(out.csv), hoursCol = build.CSV_COLUMNS.indexOf("hours");
+  var stp = rows.filter(function (r) { return r[0] === "axa-payment-stp"; })[0];
+  assert.equal(stp[hoursCol], "");
+  var tr = out.table.match(/<tr data-route="wpa-payment">[\s\S]*?<\/tr>/)[0];
+  var cells = tr.match(/<td>[\s\S]*?<\/td>/g);
+  assert.equal(cells[3], "<td></td>", "hours cell should be empty");
+});
+
+test("result buttons: 'Return to main menu' replaces 'Start over'", function () {
+  assert.ok(out.page.indexOf("Return to main menu") !== -1);
+  assert.ok(out.page.indexOf("Start over") === -1);
 });
 
 test("tool, table and CSV share the same Last checked date", function () {

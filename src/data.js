@@ -32,14 +32,17 @@
  *    tips               (optional) Extra tips for this route only.
  *    haveReady          (optional) Overrides the default "Have ready" list.
  *    transfer           (optional) true = add the "ask to be transferred" tip.
- *    alternative        (optional) { line, menu, label } A second number to offer.
+ *    alternatives       (optional) List of other numbers to offer, each
+ *                       { line, menu, label }. Shown below the main number in
+ *                       a secondary "Other … lines" section.
  *    needsVerification  true = we made an assumption. Listed in VERIFY.md.
  *    verifyNote         Short note on what needs checking (shown in ?debug=1).
  *
  *  LINE FIELDS
  *    number     Exactly as it should be displayed.
  *    team       (optional) Team name shown under the number.
- *    hours      "24/7", or null if our source gives no hours, or a list of
+ *    hours      "24/7", or null if our source gives no hours (the hours line is
+ *               then hidden, with no open/closed badge), or a list of
  *               { days: "Mon-Fri", from: "09:00", to: "17:00" }
  *               (days: Mon Tue Wed Thu Fri Sat Sun, a range "Mon-Fri", or "Sat").
  *               Times are UK time, 24-hour clock. Bank holidays are not modelled.
@@ -96,8 +99,8 @@ var IPF_DATA = {
       initials: "Al",
       lines: {
         main: { number: "+353 163 01301", hours: "24/7" },
-        second: { number: "+353 160 1300", hours: null,
-                  hoursNote: "Hours and purpose not listed" }
+        // Accepted by Effra: purpose and hours unknown.
+        second: { number: "+353 160 1300", hours: null }
       },
       questions: [],
       routes: [
@@ -107,9 +110,7 @@ var IPF_DATA = {
           line: "main",
           menu: [],
           haveReady: ["Patient's membership number"],
-          alternative: { line: "second", menu: [], label: "Other Allianz number" },
-          needsVerification: true,
-          verifyNote: "Source gives no purpose for either number, and no hours for the second."
+          alternatives: [{ line: "second", menu: [], label: "Other Allianz number" }]
         }
       ]
     },
@@ -150,6 +151,7 @@ var IPF_DATA = {
           hours: [{ days: "Mon-Fri", from: "09:00", to: "17:00" }],
           tips: ["Wait times are usually shortest between 3pm and 5pm."]
         },
+        // Accepted by Effra: hours unknown for these two lines.
         bristol: { number: "0800 854929", team: "AXA Bristol Team", hours: null },
         hol: { number: "0345 600 7696", team: "Health-on-Line Team",
                hours: [{ days: "Mon-Fri", from: "08:00", to: "18:00" }] },
@@ -174,9 +176,7 @@ var IPF_DATA = {
           id: "axa-invoice-account-stp",
           when: { query: "invoice", invoiceType: "account", policy: "stp" },
           line: "bristol", menu: [],
-          haveReady: ["Patient's policy number", "Invoice number"],
-          needsVerification: true,
-          verifyNote: "No hours given for the AXA Bristol Team; no menu options given."
+          haveReady: ["Patient's policy number", "Invoice number"]
         },
         {
           id: "axa-invoice-account-hol",
@@ -188,9 +188,7 @@ var IPF_DATA = {
           id: "axa-invoice-account-other",
           when: { query: "invoice", invoiceType: "account", policy: ["other", "unknown"] },
           line: "accountOther", menu: [],
-          haveReady: ["Patient's policy number", "Invoice number"],
-          needsVerification: true,
-          verifyNote: "No hours given for 020 4626 3233."
+          haveReady: ["Patient's policy number", "Invoice number"]
         },
         // Provider account services (payment / remittance route)
         {
@@ -199,7 +197,7 @@ var IPF_DATA = {
           line: "bristol", menu: [],
           haveReady: ["Patient's policy number", "Invoice number"],
           needsVerification: true,
-          verifyNote: "Payment queries sent to account services, not Op 1 → Op 2 ('amount AXA paid'). No hours for Bristol Team."
+          verifyNote: "Payment queries sent to account services, not Op 1 → Op 2 ('amount AXA paid')."
         },
         {
           id: "axa-payment-hol",
@@ -215,7 +213,7 @@ var IPF_DATA = {
           line: "accountOther", menu: [],
           haveReady: ["Patient's policy number", "Invoice number"],
           needsVerification: true,
-          verifyNote: "Payment queries sent to account services, not Op 1 → Op 2. No hours for 020 4626 3233."
+          verifyNote: "Payment queries sent to account services, not Op 1 → Op 2 ('amount AXA paid')."
         },
         {
           id: "axa-cover",
@@ -343,34 +341,28 @@ var IPF_DATA = {
         individual: { number: "+44 1475 788 182", team: "Cigna Individual", hours: "24/7" },
         northAmerica: { number: "+1 800 441 2668", team: "Cigna North America", hours: null,
                         hoursNote: "Open from 1pm UK time" },
-        general: { number: "+32 3 293 1811", team: "General number for UK clinics", hours: null },
-        globalEmployer: { number: "+44 1475 492 197", team: "Cigna Global Employer Health (EU)", hours: null }
+        general: { number: "+32 3 293 1811", team: "General number for UK clinics", hours: null }
       },
       questions: ["memberId", "query"],
       routes: [
         {
           id: "cigna-eu-payment", when: { memberId: "eu", query: "payment" },
           line: "eu", menu: ["1"],
-          haveReady: ["Patient's member ID", "Invoice number"],
-          alternative: { line: "globalEmployer", menu: [], label: "For Cigna Global Employer Health policies in the EU" },
-          needsVerification: true,
-          verifyNote: "Placement of the Global Employer Health (EU) number is assumed."
+          haveReady: ["Patient's member ID", "Invoice number"]
         },
         {
           id: "cigna-eu-preauth", when: { memberId: "eu", query: "preauth" },
           line: "eu", menu: ["2"],
           haveReady: ["Patient's member ID"],
-          alternative: { line: "globalEmployer", menu: [], label: "For Cigna Global Employer Health policies in the EU" },
           needsVerification: true,
-          verifyNote: "Option 2 is 'pre-admission checks', read as pre-authorisation. Global Employer Health placement assumed."
+          verifyNote: "Option 2 is 'pre-admission checks', read as pre-authorisation."
         },
         {
           id: "cigna-eu-provider", when: { memberId: "eu", query: ["invoice", "cover", "other"] },
           line: "eu", menu: ["3"],
           haveReady: ["Patient's member ID"],
-          alternative: { line: "globalEmployer", menu: [], label: "For Cigna Global Employer Health policies in the EU" },
           needsVerification: true,
-          verifyNote: "Invoice and cover queries sent to option 3 (provider team). Global Employer Health placement assumed."
+          verifyNote: "Invoice and cover queries sent to option 3 (provider team)."
         },
         {
           id: "cigna-individual", when: { memberId: "individual" },
@@ -428,15 +420,20 @@ var IPF_DATA = {
       routes: [
         { id: "vitality-invoice", when: { query: "invoice" }, line: "main", menu: ["3", "1"] },
         { id: "vitality-preauth-urgent", when: { query: "preauth", urgent: "yes" }, line: "main", menu: ["3", "2"] },
-        { id: "vitality-preauth", when: { query: "preauth", urgent: "no" }, line: "main", menu: ["3"] },
+        // Confirmed by Effra (Nov 2026); source doc says option 3 only.
+        { id: "vitality-preauth", when: { query: "preauth", urgent: "no" }, line: "main", menu: ["3", "3"] },
         {
-          id: "vitality-provider", when: { query: ["payment", "cover", "other"] }, line: "main", menu: ["3"],
+          // Confirmed by Effra (Nov 2026); source doc says option 3 only.
+          id: "vitality-provider", when: { query: ["payment", "cover", "other"] }, line: "main", menu: ["3", "3"],
           covers: "Other provider questions, e.g. patient cover, authorisation, remittances, invoices"
         }
       ]
     },
 
     // ---------------------------------------------------------------------- WPA
+    // WPA has three overlapping lines (accepted by Effra). Every route lists the
+    // other two lines as alternatives so staff can try another line if needed.
+    // Hours for 01823 625278 and 01823 625000 are unknown (accepted by Effra).
     {
       id: "wpa",
       name: "WPA",
@@ -452,48 +449,76 @@ var IPF_DATA = {
         {
           id: "wpa-invoice-one", when: { query: "invoice", invoiceCount: "one" },
           line: "provider", menu: ["4", "3"],
-          alternative: { line: "billing", menu: ["4"], label: "Billing & payment queries line" },
-          needsVerification: true,
-          verifyNote: "Overlaps with 01823 625278 option 4; 625170 chosen as primary because hours are known."
+          alternatives: [
+            { line: "billing", menu: ["4"], label: "Invoicing & payment queries" },
+            { line: "claims",  menu: ["1"], label: "Treatment or claim queries" }
+          ]
         },
         {
           id: "wpa-invoice-several", when: { query: "invoice", invoiceCount: "several" },
           line: "provider", menu: ["4", "1"],
-          alternative: { line: "billing", menu: ["4"], label: "Billing & payment queries line" },
-          needsVerification: true,
-          verifyNote: "Overlaps with 01823 625278 option 4; 625170 chosen as primary because hours are known."
+          alternatives: [
+            { line: "billing", menu: ["4"], label: "Invoicing & payment queries" },
+            { line: "claims",  menu: ["1"], label: "Treatment or claim queries" }
+          ]
         },
         {
           id: "wpa-payment", when: { query: "payment" },
           line: "billing", menu: ["4"],
           tips: ["For a payment dispute, email ageddebt@wpa.org.uk. To follow up by phone, call 01823 625170 and ask to be routed to that team."],
-          needsVerification: true,
-          verifyNote: "No hours for 01823 625278. No dedicated line for payment disputes."
+          alternatives: [
+            { line: "provider", menu: ["4"], label: "Invoice queries" },
+            { line: "claims",   menu: ["1"], label: "Treatment or claim queries" }
+          ]
         },
         {
           id: "wpa-preauth", when: { query: "preauth" },
           line: "provider", menu: ["2"],
-          alternative: { line: "billing", menu: ["2"], label: "Billing & payment queries line" },
-          needsVerification: true,
-          verifyNote: "Overlaps with 01823 625278 option 2; 625170 chosen as primary."
+          alternatives: [
+            { line: "billing", menu: ["2"], label: "Pre-authorisation" },
+            { line: "claims",  menu: ["1"], label: "Treatment or claim queries" }
+          ]
         },
-        { id: "wpa-cover", when: { query: "cover" }, line: "provider", menu: ["3"] },
+        {
+          id: "wpa-cover", when: { query: "cover" },
+          line: "provider", menu: ["3"],
+          alternatives: [
+            { line: "claims",  menu: ["1"], label: "Treatment or claim queries" },
+            { line: "billing", menu: [],    label: "Billing & payment queries line" }
+          ]
+        },
         {
           id: "wpa-submit", when: { query: "submit" },
           line: "claims", menu: ["3"],
-          alternative: { line: "provider", menu: ["4"], label: "Provider line (invoice query / submit invoice)" },
-          needsVerification: true,
-          verifyNote: "Overlaps with 01823 625170 option 4. No hours for 01823 625000."
+          alternatives: [
+            { line: "provider", menu: ["4"], label: "Invoice query or submitting an invoice" },
+            { line: "billing",  menu: ["4"], label: "Invoicing & payment queries" }
+          ]
         },
-        { id: "wpa-contract", when: { query: "contract" }, line: "provider", menu: ["5"] },
-        { id: "wpa-details", when: { query: "details" }, line: "provider", menu: ["6"] },
+        {
+          id: "wpa-contract", when: { query: "contract" },
+          line: "provider", menu: ["5"],
+          alternatives: [
+            { line: "billing", menu: [], label: "Billing & payment queries line" },
+            { line: "claims",  menu: [], label: "Treatment, claims and invoice submission line" }
+          ]
+        },
+        {
+          id: "wpa-details", when: { query: "details" },
+          line: "provider", menu: ["6"],
+          alternatives: [
+            { line: "billing", menu: [], label: "Billing & payment queries line" },
+            { line: "claims",  menu: [], label: "Treatment, claims and invoice submission line" }
+          ]
+        },
         {
           id: "wpa-other", when: { query: "other" },
           line: "provider", menu: [],
           transfer: true,
-          alternative: { line: "claims", menu: ["1"], label: "For treatment or claim queries" },
-          needsVerification: true,
-          verifyNote: "01823 625000 option 1 (treatment/claim queries) offered as the alternative here."
+          alternatives: [
+            { line: "claims",  menu: ["1"], label: "Treatment or claim queries" },
+            { line: "billing", menu: [],    label: "Billing & payment queries line" }
+          ]
         }
       ]
     }

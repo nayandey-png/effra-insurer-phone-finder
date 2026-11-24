@@ -44,12 +44,14 @@ npm run build:framer
 Everything lives in **`src/data.js`**. The comments at the top of that file explain each field.
 
 - **Change a number or its hours:** find the insurer, then the `lines` section, and edit `number` or `hours`. Every route using that line updates.
-  Hours look like `[{ days: "Mon-Fri", from: "09:00", to: "17:00" }]` in UK time on the 24-hour clock. Use `"24/7"`, or `null` if the hours aren't known; `null` shows "Hours not listed" and no badge.
+  Hours look like `[{ days: "Mon-Fri", from: "09:00", to: "17:00" }]` in UK time on the 24-hour clock. Use `"24/7"`, or `null` if the hours aren't known; `null` hides the hours line (no badge) and leaves the hours cell empty in the table and CSV.
 - **Change a menu path:** edit the route's `menu`, e.g. `["1", "2"]` shows "Press 1 → Press 2".
+- **Other numbers on a card:** list them in the route's `alternatives`, e.g. `[{ line: "billing", menu: ["4"], label: "Invoicing & payment queries" }]`. They appear below the main number in a secondary "Other … lines" section, collapsed on phones and open on wider screens.
 - **Change a tip:** edit `tips` on the route. Tips on a line apply to every route using it, and tips on the insurer apply to all its routes.
 - **Change wording of a question or answer:** edit the `questions` section at the bottom.
 - **Add a route:** copy an existing route and give it a new `id` and `when`. Then run `npm test`, which tells you if a path now leads nowhere or to two places.
 - **Add a new number:** also add it to `SOURCE_NUMBERS` in `test/paths.test.js`. This is a deliberate double-check that every number comes from a source.
+- **Leave a source number out on purpose:** add it to `EXCLUDED_SOURCE_NUMBERS` in `test/paths.test.js`, with a comment saying why. The test then checks it stays out of the tool, table and CSV.
 
 To check the whole tree, open **`index.html?debug=1`**. It lists every insurer × query × follow-up path and its result, with assumptions highlighted. The debug view is stripped from the build.
 
@@ -97,6 +99,7 @@ So that Google and LLMs can read the numbers, put the same data on the page as r
 ### Option A: Framer CMS (recommended, renders as native page content)
 1. Run `npm run build`. This writes `dist/insurer-routes.csv`, with one row per route and these columns:
    `slug, insurer, query, follow_up, number, team, menu_path, hours, tips, alternative, last_checked`
+   `hours` is empty where the hours are unknown. `alternative` lists any other numbers for that route, separated by "; ".
 2. In Framer, open **CMS → + New Collection**, name it e.g. "Insurer routes", and choose **Import CSV**. (For an existing collection, open its **⋯** menu and choose **Import**.) Select `insurer-routes.csv`.
 3. Map the columns. Use `slug` as the **Slug** and `query` as the **Title**, or keep `slug` as the title if Framer asks for one. Import the rest as **Plain Text** fields.
 4. On the tool's page, below the component, add a heading (e.g. "Insurer provider phone numbers") and a text line with "Last checked: …".

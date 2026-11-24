@@ -116,7 +116,7 @@
 
   function formatHours(line) {
     if (line.hours === "24/7") return "24/7";
-    if (!line.hours) return line.hoursNote || "Hours not listed";
+    if (!line.hours) return line.hoursNote || "";
     return line.hours.map(function (w) {
       return w.days.replace("-", "–") + " " + formatTime(w.from) + "–" + formatTime(w.to);
     }).join(", ");
@@ -171,8 +171,11 @@
     var tips = [].concat(route.tips || [], route.transfer ? [DATA.transferTip] : [], line.tips || [], insurer.tips || []);
     var haveReady = route.haveReady ||
       (state.query && DATA.haveReadyDefaults[state.query]) || [];
-    var alt = route.alternative ? describeLine(insurer, route.alternative.line, route.alternative.menu) : null;
-    if (alt) alt.label = route.alternative.label;
+    var alternatives = (route.alternatives || []).map(function (a) {
+      var d = describeLine(insurer, a.line, a.menu);
+      d.label = a.label || "";
+      return d;
+    });
     return {
       routeId: route.id,
       insurerId: insurer.id,
@@ -181,7 +184,7 @@
       covers: route.covers || "",
       tips: tips,
       haveReady: haveReady,
-      alternative: alt,
+      alternatives: alternatives,
       needsVerification: !!route.needsVerification,
       verifyNote: route.verifyNote || ""
     };
