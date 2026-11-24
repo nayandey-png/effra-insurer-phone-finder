@@ -277,6 +277,20 @@ test("tool, table and CSV share the same Last checked date", function () {
   assert.ok(out.framer.indexOf("Last checked: " + D.lastChecked) !== -1);
 });
 
+test("every insurer has a logo file, and the build inlines them all", function () {
+  var fs = require("fs"), path = require("path");
+  D.insurers.forEach(function (ins) {
+    var dir = path.join(__dirname, "..", "assets", "logos");
+    var ok = ["svg", "png"].some(function (ext) { return fs.existsSync(path.join(dir, ins.id + "." + ext)); });
+    assert.ok(ok, "missing logo: assets/logos/" + ins.id + ".svg or .png");
+  });
+  assert.deepEqual(out.missingLogos, []);
+  var m = out.page.match(/window\.__IPF_LOGOS__ = (\{.*?\});/);
+  var logos = JSON.parse(m[1]);
+  assert.deepEqual(Object.keys(logos).sort(), D.insurers.map(function (i) { return i.id; }).sort());
+  Object.keys(logos).forEach(function (k) { assert.match(logos[k], /^data:image\/(png|svg\+xml);base64,/); });
+});
+
 test("built page is self-contained and has no debug view", function () {
   var page = out.page;
   assert.ok(!/DEBUG:|ipf-debug|debugView/.test(page), "debug code leaked into build");

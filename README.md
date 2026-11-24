@@ -62,22 +62,30 @@ Edit `lastChecked` near the top of `src/data.js` (e.g. `"February 2027"`) and re
 Edit `cta.url` in `src/data.js` (currently a placeholder).
 
 ## Logos
-Put the files in `assets/logos/`, named by insurer id, as **SVG (preferred) or PNG**:
+Logos live in `assets/logos/`, named by insurer id. All 10 are in place as PNGs:
 
 | Insurer | File |
 |---|---|
-| Allianz | `allianz.svg` / `allianz.png` |
-| Aviva | `aviva.svg` / `aviva.png` |
-| AXA | `axa.svg` / `axa.png` |
-| AXA Global | `axa-global.svg` / `axa-global.png` |
-| Bupa | `bupa.svg` / `bupa.png` |
-| Bupa Global | `bupa-global.svg` / `bupa-global.png` |
-| Cigna | `cigna.svg` / `cigna.png` |
-| Healix Health | `healix.svg` / `healix.png` |
-| Vitality | `vitality.svg` / `vitality.png` |
-| WPA | `wpa.svg` / `wpa.png` |
+| Allianz | `allianz.png` |
+| Aviva | `aviva.png` |
+| AXA | `axa.png` |
+| AXA Global | `axa-global.png` |
+| Bupa | `bupa.png` |
+| Bupa Global | `bupa-global.png` |
+| Cigna | `cigna.png` |
+| Healix Health | `healix.png` |
+| Vitality | `vitality.png` |
+| WPA | `wpa.png` |
 
-Until a file is present, the tool shows a clean initials badge. The build inlines logos as data URIs, so the Framer component stays self-contained. Keep files small: a square or landscape SVG works best, shown at 44 × 44 px. You can reuse the same file for AXA and AXA Global, and for Bupa and Bupa Global.
+The build inlines them as data URIs, so the Framer component stays self-contained. If a file is missing, the tool shows a clean initials badge instead. `npm test` checks that every insurer has a logo.
+
+**Replacing a logo:** use **SVG or PNG** (convert WebP or JPEG first), named `<id>.svg` or `<id>.png`. An SVG takes priority over a PNG with the same name. For consistent sizes, prepare it like the current files:
+- a **240 × 160 px PNG** with a transparent background;
+- the logo centred, with about 8% padding, and its aspect ratio kept;
+- outer white or light-grey margins trimmed, but a coloured brand tile (e.g. AXA navy) kept whole;
+- no white logo on a transparent background, because it would vanish on the white logo box.
+
+Logos are shown in a 3:2 box: 60 × 40 px on the insurer buttons and 36 × 24 px in the small header chip.
 
 ## Brand styling
 The brand tokens are CSS custom properties at the top of `index.html` (`:root { --ipf-… }`): font, radius, colours and focus ring. They're neutral placeholders, so swap in Effra's values and rebuild. If you change colours, keep text contrast at 4.5:1 or better.
