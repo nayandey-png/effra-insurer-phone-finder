@@ -60,7 +60,7 @@ To check the whole tree, open **`index.html?debug=1`**. It lists every insurer �
 Edit `lastChecked` near the top of `src/data.js` (e.g. `"February 2027"`) and rebuild. The same value is used in the tool's footer, the table and the CSV.
 
 ### The Effra link
-The "See how →" link on each result goes to that insurer's Effra page, set by `ctaUrl` on the insurer in `src/data.js`. Bupa, AXA, Aviva, Vitality, WPA and Healix have their own pages. Insurers without a `ctaUrl` (Allianz, Cigna, AXA Global, Bupa Global) use `cta.defaultUrl` (`https://www.effra.io/#how-it-works`). Links open with `target="_top"`, so they navigate the Effra page itself, not the inside of the iframe.
+The "See how →" link on each result goes to that insurer's Effra page, set by `ctaUrl` on the insurer in `src/data.js`. Bupa, AXA, Aviva, Vitality, WPA and Healix have their own pages. Insurers without a `ctaUrl` (Allianz, Cigna, AXA Global, Bupa Global) use `cta.defaultUrl` (`https://www.effra.io/?lp_source=Insurer+Phone+Number+Tool`). Links open with `target="_top"`, so they navigate the Effra page itself, not the inside of the iframe.
 
 ## Logos
 Logos live in `assets/logos/`, named by insurer id. All 10 are in place as PNGs:

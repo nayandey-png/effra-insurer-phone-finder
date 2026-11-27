@@ -139,7 +139,6 @@ h1, h2, h3 { line-height: 1.25; margin: 0; }
 .ipf-other .ipf-copy { min-height: 36px; padding: 4px 12px; font-size: .88rem; }
 .ipf-menu.is-compact .ipf-menu-step { background: var(--ipf-accent-soft); color: var(--ipf-on-accent); padding: 3px 12px; font-size: .88rem; font-weight: 600; }
 .ipf-other-hours { margin-top: 8px; }
-.ipf-other-hours .ipf-note { margin: 4px 0 0; }
 .ipf-hours { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .ipf-badge { display: inline-block; font-size: .8rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
 .ipf-badge.is-open { color: var(--ipf-open); background: var(--ipf-open-bg); }
@@ -258,7 +257,7 @@ var IPF_DATA = {
   cta: {
     text: "Still spending time on hold to insurers? Effra automates insurer billing end-to-end for 1000+ providers.",
     linkText: "See how →",
-    defaultUrl: "https://www.effra.io/#how-it-works"
+    defaultUrl: "https://www.effra.io/?lp_source=Insurer+Phone+Number+Tool"
   },
 
   // Tip used on every "Something else" route that goes to a general number.
@@ -1272,11 +1271,7 @@ else { window.IPF_DATA = IPF_DATA; }
   }
 
   function hoursBlock(line, hoursText) {
-    var known = E.isOpenNow(line, new Date()) !== null;
-    return h("div", null, [
-      h("div", { class: "ipf-hours" }, [h("span", { text: hoursText }), badge(line)]),
-      known && line.hours !== "24/7" ? h("p", { class: "ipf-note", text: "Usual hours, UK time." }) : null
-    ]);
+    return h("div", { class: "ipf-hours" }, [h("span", { text: hoursText }), badge(line)]);
   }
 
   function section(label, content) {

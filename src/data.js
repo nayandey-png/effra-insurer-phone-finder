@@ -75,7 +75,7 @@ var IPF_DATA = {
   cta: {
     text: "Still spending time on hold to insurers? Effra automates insurer billing end-to-end for 1000+ providers.",
     linkText: "See how →",
-    defaultUrl: "https://www.effra.io/#how-it-works"
+    defaultUrl: "https://www.effra.io/?lp_source=Insurer+Phone+Number+Tool"
   },
 
   // Tip used on every "Something else" route that goes to a general number.

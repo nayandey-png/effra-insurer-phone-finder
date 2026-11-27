@@ -71,4 +71,4 @@ Open items still carry `needsVerification: true` in `src/data.js` and are highli
 - [ ] No WPA route for overpayments, so that option is hidden.
 
 ## Not modelled (by design)
-- Bank holidays: the source gives no rule, so the badge uses the usual weekly hours and says "Usual hours, UK time".
+- Bank holidays: the source gives no rule, so the badge uses the usual weekly hours; bank holidays aren't modelled.
