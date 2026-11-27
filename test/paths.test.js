@@ -306,6 +306,8 @@ test("CTA link: per-insurer Effra page, otherwise the default, opening in the to
     assert.equal(r.ctaUrl, expected, id);
   });
   assert.equal(D.cta.defaultUrl, "https://www.effra.io/#how-it-works");
+  assert.equal(D.cta.text, "Still spending time on hold to insurers? Effra automates insurer billing end-to-end for 1000+ providers.");
+  assert.equal(D.cta.linkText, "See how →");
   assert.match(out.page, /href: r\.ctaUrl, target: "_top"/);
 });
 

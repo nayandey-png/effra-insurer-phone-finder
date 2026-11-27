@@ -72,7 +72,7 @@ var IPF_DATA = {
   // insurer's own Effra page (`ctaUrl` on the insurer below) when there is one,
   // otherwise to `defaultUrl`. Links open in the main page, not the iframe.
   cta: {
-    text: "Effra handles insurer billing and chasing for 1000+ practitioners.",
+    text: "Still spending time on hold to insurers? Effra automates insurer billing end-to-end for 1000+ providers.",
     linkText: "See how →",
     defaultUrl: "https://www.effra.io/#how-it-works"
   },
