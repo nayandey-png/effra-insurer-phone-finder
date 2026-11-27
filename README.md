@@ -100,6 +100,12 @@ The brand tokens are CSS custom properties at the top of `index.html` (`:root { 
 | `--ipf-border` / `--ipf-border-strong` | `#edeff0` / `#868990` | dividers / option tiles, inputs, outline buttons |
 | `--ipf-radius-btn` / `--ipf-radius` | `99px` / `8px` | buttons / cards and option tiles |
 | `--ipf-font` | Manrope, then the system font stack | everything (body text weight 500, as on effra.io) |
+| `--ipf-accent` / `--ipf-accent-hover` | `#f1c55f` / `#e5b443` | Effra yellow: menu-step chips, "See how" button, progress fill |
+| `--ipf-accent-soft` | `#fdf6e3` | option tile hover/active, compact menu chips |
+| `--ipf-on-accent` | `#14150d` | text on yellow |
+| `--ipf-band` / `--ipf-on-band` | `#14150d` / `#ffffff` | dark Effra band at the bottom of the result card |
+
+Yellow is only ever a **background** with ink text on it, never text or a border on white, because it fails contrast there. A test enforces this. The progress-bar fill is excluded from the 3:1 check because it's supplementary: each step is also announced to screen readers.
 
 **Contrast is checked by `npm test`** (`test/contrast.test.js`):
 - Text and button labels must reach **4.5:1**.

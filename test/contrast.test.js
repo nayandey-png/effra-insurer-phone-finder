@@ -37,13 +37,23 @@ var PAIRS = [
   ["primary", "bg", 4.5, "Copy button, links, phone number"],
   ["primary", "surface", 4.5, "phone number on result card"],
   ["primary", "primary-soft", 4.5, "compact menu chip, initials, Copy hover"],
-  ["primary-text", "primary", 4.5, "primary button / menu step label"],
-  ["primary-text", "primary-hover", 4.5, "primary button label on hover"],
+  ["primary-text", "primary", 4.5, "white text on ink"],
+  ["text", "accent-soft", 4.5, "option label on hover/active"],
+  ["muted", "accent-soft", 4.5, "option detail on hover/active"],
+  ["on-accent", "accent", 4.5, "menu-step chips, See how button"],
+  ["on-accent", "accent-hover", 4.5, "See how button on hover"],
+  ["on-accent", "accent-soft", 4.5, "compact menu chips (other lines)"],
+  ["on-band", "band", 4.5, "CTA band text"],
+  ["accent", "band", 3, "See how button edge against the dark band"],
+  ["focus-on-band", "band", 3, "focus ring inside the dark band"],
   ["open", "open-bg", 4.5, "Open now badge"],
   ["closed", "closed-bg", 4.5, "Closed now badge"],
   ["border-strong", "bg", 3, "option tile / input / outline button border"],
   ["focus", "bg", 3, "focus ring"],
   ["focus", "surface", 3, "focus ring on cards"]
+  // Not checked: the progress-bar fill (--ipf-accent on the light track). It's
+  // supplementary decoration: each step change is announced through aria-live and
+  // the progressbar's aria-valuenow, so it doesn't need 3:1 non-text contrast.
 ];
 
 test("brand tokens meet WCAG contrast", function () {
@@ -54,6 +64,15 @@ test("brand tokens meet WCAG contrast", function () {
     if (r < p[2]) failures.push(p[0] + " on " + p[1] + " = " + r.toFixed(2) + ":1 (needs " + p[2] + ":1, " + p[3] + ")");
   });
   assert.deepEqual(failures, []);
+});
+
+test("yellow accent is only ever a background, never text or a border", function () {
+  var css = html.match(/<style>([\s\S]*?)<\/style>/)[1].replace(/\/\*[\s\S]*?\*\//g, "");
+  var decls = css.match(/[a-z-]+\s*:[^;{}]*var\(--ipf-accent(-hover)?\)[^;{}]*/g) || [];
+  assert.ok(decls.length > 0);
+  decls.forEach(function (d) { assert.match(d, /^(background|outline-color)\s*:/, "accent used outside a background: " + d); });
+  var outline = decls.filter(function (d) { return /^outline-color/.test(d); });
+  assert.equal(outline.length, 0, "use --ipf-focus-on-band for outlines");
 });
 
 module.exports = { PAIRS: PAIRS, tokens: T, ratio: ratio };
