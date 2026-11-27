@@ -161,6 +161,16 @@ test("WPA: every card shows the other WPA lines", function () {
   });
 });
 
+test("Have ready: comma-separated, later items start lowercase", function () {
+  assert.equal(E.formatHaveReady(["Invoice number", "Patient's membership number"]), "Invoice number, patient's membership number");
+  assert.equal(E.formatHaveReady(["Patient's policy number", "Invoice number"]), "Patient's policy number, invoice number");
+  assert.equal(E.formatHaveReady(["Invoice number", "Patient's member ID"]), "Invoice number, patient's member ID");
+  assert.equal(E.formatHaveReady(["Patient's member ID"]), "Patient's member ID");
+  assert.equal(E.formatHaveReady([]), "");
+  assert.ok(out.page.indexOf("E.formatHaveReady(r.haveReady)") !== -1);
+  assert.ok(out.page.indexOf('haveReady.join(" · ")') === -1);
+});
+
 test("sanitize drops invalid or irrelevant URL params", function () {
   assert.deepEqual(E.sanitize({ insurer: "nope" }), {});
   assert.deepEqual(E.sanitize({ insurer: "axa", query: "submit" }), { insurer: "axa" }); // hidden for AXA

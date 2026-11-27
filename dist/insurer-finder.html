@@ -1026,6 +1026,16 @@ else { window.IPF_DATA = IPF_DATA; }
     return rows;
   }
 
+  // "Have ready" list as one line: "Invoice number, patient's membership number".
+  // Items after the first get a lowercase first letter only, so "member ID" keeps
+  // its capitals. If a later item must start with a capital (e.g. "AXA reference"),
+  // adjust here.
+  function formatHaveReady(list) {
+    return (list || []).map(function (item, i) {
+      return i === 0 ? item : item.charAt(0).toLowerCase() + item.slice(1);
+    }).join(", ");
+  }
+
   // The footer line, shared by the tool and the SEO table.
   function footerText() {
     return "Last checked: " + DATA.lastChecked + ". " + DATA.disclaimer;
@@ -1053,7 +1063,8 @@ else { window.IPF_DATA = IPF_DATA; }
     enumeratePaths: enumeratePaths,
     allRoutes: allRoutes,
     stateToParams: stateToParams,
-    footerText: footerText
+    footerText: footerText,
+    formatHaveReady: formatHaveReady
   };
 });
 
@@ -1274,7 +1285,7 @@ else { window.IPF_DATA = IPF_DATA; }
       m.menu.length ? section("Phone menu", [menuBlock(m.menu)]) : null,
       m.hoursText ? section("Opening hours", [hoursBlock(m.line, m.hoursText)]) : null,
       r.covers ? section("This line handles", [h("p", { text: r.covers })]) : null,
-      r.haveReady.length ? section("Have ready", [h("p", { text: r.haveReady.join(" · ") })]) : null,
+      r.haveReady.length ? section("Have ready", [h("p", { text: E.formatHaveReady(r.haveReady) })]) : null,
       r.tips.length ? section("Tips", [h("ul", { class: "ipf-list" }, r.tips.map(function (t) { return h("li", null, [richText(t)]); }))]) : null
     ]);
     // Other lines: visually secondary, collapsed by default on narrow screens.

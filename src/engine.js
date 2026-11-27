@@ -246,6 +246,16 @@
     return rows;
   }
 
+  // "Have ready" list as one line: "Invoice number, patient's membership number".
+  // Items after the first get a lowercase first letter only, so "member ID" keeps
+  // its capitals. If a later item must start with a capital (e.g. "AXA reference"),
+  // adjust here.
+  function formatHaveReady(list) {
+    return (list || []).map(function (item, i) {
+      return i === 0 ? item : item.charAt(0).toLowerCase() + item.slice(1);
+    }).join(", ");
+  }
+
   // The footer line, shared by the tool and the SEO table.
   function footerText() {
     return "Last checked: " + DATA.lastChecked + ". " + DATA.disclaimer;
@@ -273,6 +283,7 @@
     enumeratePaths: enumeratePaths,
     allRoutes: allRoutes,
     stateToParams: stateToParams,
-    footerText: footerText
+    footerText: footerText,
+    formatHaveReady: formatHaveReady
   };
 });

@@ -388,7 +388,7 @@ a { color: var(--ipf-primary); }
       m.menu.length ? section("Phone menu", [menuBlock(m.menu)]) : null,
       m.hoursText ? section("Opening hours", [hoursBlock(m.line, m.hoursText)]) : null,
       r.covers ? section("This line handles", [h("p", { text: r.covers })]) : null,
-      r.haveReady.length ? section("Have ready", [h("p", { text: r.haveReady.join(" · ") })]) : null,
+      r.haveReady.length ? section("Have ready", [h("p", { text: E.formatHaveReady(r.haveReady) })]) : null,
       r.tips.length ? section("Tips", [h("ul", { class: "ipf-list" }, r.tips.map(function (t) { return h("li", null, [richText(t)]); }))]) : null
     ]);
     // Other lines: visually secondary, collapsed by default on narrow screens.
@@ -512,7 +512,7 @@ a { color: var(--ipf-primary); }
         h("td", { text: r.main.hoursText }),
         h("td", { text: r.alternatives.map(function (a) { return a.number + " " + a.menu.join(" → ") + " (" + a.label + ")"; }).join(" | ") }),
         h("td", { text: r.tips.join(" | ") }),
-        h("td", { text: r.haveReady.join(", ") }),
+        h("td", { text: E.formatHaveReady(r.haveReady) }),
         h("td", { text: r.covers }),
         h("td", { text: r.needsVerification ? "⚠ " + r.verifyNote : "" })
       ]);
