@@ -238,7 +238,7 @@ function routeRows() {
       number: m.number,
       tel: m.tel,
       team: m.team,
-      menu: m.menu.length ? m.menu.join(", then ") : "No menu options listed",
+      menu: m.menu.join(", then "), // empty when the route has no menu options
       hours: m.hoursText,
       tips: notes,
       alternatives: alts

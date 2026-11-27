@@ -303,7 +303,7 @@ var IPF_DATA = {
           when: {},
           line: "invoicing",
           menu: [],
-          covers: "Invoicing queries",
+          covers: "Invoice questions",
           tips: ["Go through your invoices one at a time."],
           haveReady: ["Invoice number", "Patient's membership number"],
           needsVerification: true,
@@ -409,7 +409,7 @@ var IPF_DATA = {
           id: "axa-details",
           when: { query: "details" },
           line: "general", menu: ["5"],
-          tips: ["AXA asks providers to make practice detail changes through Healthcode's Private Practice Register (PPR) first. Call if a change hasn't appeared in AXA's records, or a detail needs correcting."]
+          tips: ["AXA asks you to update your details on Healthcode's Private Practice Register (PPR) first. Call if the change hasn't reached AXA, or if a detail needs correcting."]
         },
         {
           id: "axa-recoup",
@@ -442,7 +442,7 @@ var IPF_DATA = {
           when: {},
           line: "main",
           menu: ["2"],
-          covers: "All provider queries (option 2 is the provider team)",
+          covers: "All clinic queries",
           haveReady: ["Patient's policy number"],
           needsVerification: true,
           verifyNote: "Source gives one number and option for everything; query step skipped."
@@ -493,7 +493,7 @@ var IPF_DATA = {
           when: {},
           line: "main",
           menu: [],
-          covers: "Pre-authorisation, claim information, payments and missing remittances",
+          covers: "Pre-authorisation, claims, payments and missing remittances",
           haveReady: ["Patient's membership number", "Invoice number (for claim or payment queries)"],
           needsVerification: true,
           verifyNote: "One number for everything listed; query step skipped. No patient-cover route given."
@@ -601,7 +601,7 @@ var IPF_DATA = {
         {
           // Confirmed by Effra (Nov 2026); source doc says option 3 only.
           id: "vitality-provider", when: { query: ["payment", "cover", "other"] }, line: "main", menu: ["3", "3"],
-          covers: "Other provider questions, e.g. patient cover, authorisation, remittances, invoices"
+          covers: "Most other questions, such as patient cover, authorisation, remittances and invoices"
         }
       ]
     },
@@ -714,18 +714,18 @@ var IPF_DATA = {
       title: "What do you need to do?",
       options: [
         { value: "invoice",  label: "Chase or check an invoice" },
-        { value: "payment",  label: "Query a payment / remittance I can't reconcile" },
+        { value: "payment",  label: "A payment or remittance doesn't add up" },
         { value: "preauth",  label: "Get pre-authorisation" },
-        { value: "cover",    label: "Check patient cover / membership number" },
+        { value: "cover",    label: "Check a patient's cover or membership number" },
         { value: "submit",   label: "Submit an invoice" },
-        { value: "contract", label: "Provider recognition, contract or agreed fees" },
+        { value: "contract", label: "Our contract, agreed fees or provider recognition" },
         { value: "details",  label: "Update our practice details" },
-        { value: "recoup",   label: "Overpayment / recoup request" },
+        { value: "recoup",   label: "The insurer overpaid us or wants money back (recoup)" },
         { value: "other",    label: "Something else" }
       ]
     },
     invoiceType: {
-      title: "What's the invoice question?",
+      title: "Which best describes it?",
       shortTitle: "Invoice question",          // used in the SEO table and CSV
       options: [
         { value: "specific", label: "Check where an invoice is up to, or ask about an amount AXA paid" },
@@ -746,9 +746,9 @@ var IPF_DATA = {
       title: "What does the member ID start with?",
       shortTitle: "Member ID starts with",
       options: [
-        { value: "eu",           label: "85, 80 or 88", detail: "Cigna EU" },
-        { value: "individual",   label: "9",            detail: "Cigna Individual" },
-        { value: "northAmerica", label: "21",           detail: "Cigna North America" },
+        { value: "eu",           label: "85, 80 or 88", detail: "Europe" },
+        { value: "individual",   label: "9",            detail: "Individual policy" },
+        { value: "northAmerica", label: "21",           detail: "North America" },
         { value: "none",         label: "No member ID", detail: "General number for UK clinics" }
       ]
     },

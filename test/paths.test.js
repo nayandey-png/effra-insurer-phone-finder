@@ -261,6 +261,11 @@ test("outputs: no 'Hours not listed', no excluded numbers, empty hours cells whe
   var rows = parseCsv(out.csv), hoursCol = build.CSV_COLUMNS.indexOf("hours");
   var stp = rows.filter(function (r) { return r[0] === "axa-payment-stp"; })[0];
   assert.equal(stp[hoursCol], "");
+  var menuCol = build.CSV_COLUMNS.indexOf("menu_path");
+  assert.equal(stp[menuCol], "", "menu cell should be empty when there are no menu options");
+  assert.ok(out.csv.indexOf("No menu options listed") === -1 && out.table.indexOf("No menu options listed") === -1);
+  var axaOther = out.table.match(/<tr data-route="axa-other">[\s\S]*?<\/tr>/)[0].match(/<td>[\s\S]*?<\/td>/g);
+  assert.equal(axaOther[2], "<td></td>", "table menu cell should be empty");
   var tr = out.table.match(/<tr data-route="wpa-payment">[\s\S]*?<\/tr>/)[0];
   var cells = tr.match(/<td>[\s\S]*?<\/td>/g);
   assert.equal(cells[3], "<td></td>", "hours cell should be empty");

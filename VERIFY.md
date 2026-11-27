@@ -37,8 +37,8 @@ Open items still carry `needsVerification: true` in `src/data.js` and are highli
 
 ### AXA
 - [ ] **Payment vs invoice overlap** (`axa-payment-stp`, `axa-payment-hol`, `axa-payment-other`). Op 1 → Op 2 covers "an amount AXA paid that you need explained". Provider account services covers "a payment amount you cannot reconcile". So:
-  - "Chase or check an invoice" asks a follow-up. "A specific invoice (status, or an amount paid)" goes to 01892 503030, Op 1 → Op 2. "Received but not paid / can't reconcile / remittance / dropped claims" goes to account services, which asks for the policy prefix.
-  - "Query a payment / remittance I can't reconcile" goes **straight to account services**.
+  - "Chase or check an invoice" asks a follow-up. "Check where an invoice is up to, or ask about an amount AXA paid" goes to 01892 503030, Op 1 → Op 2. "Something's gone wrong: an invoice is overdue, a remittance doesn't add up, or a claim has gone missing" goes to account services, which asks for the policy prefix.
+  - "A payment or remittance doesn't add up" goes **straight to account services**.
 - [ ] **"Shortest wait times 3–5pm"** appears after the account-services block in the doc. I applied it to the general number 01892 503030 routes only.
 - [ ] "Check patient cover / membership number" goes to Op 1 → Op 2. The source groups "confirming membership number" with billing.
 - [ ] No route for submitting an invoice, so that option is hidden for AXA.
