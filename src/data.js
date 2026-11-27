@@ -266,7 +266,7 @@ var IPF_DATA = {
     {
       id: "axa-global",
       name: "AXA Global",
-      hint: "Global = international policies",
+      hint: "International policies",
       initials: "AXA",
       lines: {
         main: { number: "+44 (0)1892 503 856", team: "Provider team", hours: "24/7" }
@@ -317,7 +317,7 @@ var IPF_DATA = {
     {
       id: "bupa-global",
       name: "Bupa Global",
-      hint: "Global = international policies",
+      hint: "International policies",
       initials: "BG",
       lines: {
         main: { number: "01273 323563", hours: "24/7" }

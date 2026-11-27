@@ -95,6 +95,8 @@ test("every question shown has at least one option, and multi-route insurers off
 });
 
 test("insurer list is alphabetical and Bupa/AXA Global are separate", function () {
+  assert.equal(E.getInsurer("axa-global").hint, "International policies");
+  assert.equal(E.getInsurer("bupa-global").hint, "International policies");
   var names = D.insurers.map(function (i) { return i.name.toLowerCase(); });
   assert.deepEqual(names, names.slice().sort());
   ["axa", "axa-global", "bupa", "bupa-global"].forEach(function (id) { assert.ok(E.getInsurer(id)); });
