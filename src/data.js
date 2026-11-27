@@ -65,8 +65,9 @@ var IPF_DATA = {
   // ---------------------------------------------------------------------------
   lastChecked: "November 2026",
 
-  // Footer disclaimer (after the date).
-  disclaimer: "Numbers and menu options can change. Not affiliated with these insurers.",
+  // Footer disclaimer. The footer reads "Last checked: <lastChecked>. <disclaimer>"
+  // in the tool (insurer list) and in insurer-table.html.
+  disclaimer: "Numbers and menu options may change. Not affiliated with these insurers.",
 
   // The single Effra call to action on the result card. The link goes to the
   // insurer's own Effra page (`ctaUrl` on the insurer below) when there is one,

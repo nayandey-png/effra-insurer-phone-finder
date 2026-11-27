@@ -276,6 +276,15 @@ test("result buttons: 'Return to main menu' replaces 'Start over'", function () 
   assert.ok(out.page.indexOf("Start over") === -1);
 });
 
+test("footer text is exact, built from lastChecked, and shared by tool and table", function () {
+  var expected = "Last checked: " + D.lastChecked + ". Numbers and menu options may change. Not affiliated with these insurers.";
+  assert.equal(E.footerText(), expected);
+  assert.equal(D.lastChecked, "November 2026");
+  assert.ok(/footerEl\.textContent = E\.footerText\(\);/.test(out.page));
+  assert.equal(out.table.split(expected).length - 1, 2, "table: top and bottom footer lines");
+  assert.ok(out.table.indexOf(" · Numbers") === -1 && out.page.indexOf("can change. Not affiliated") === -1);
+});
+
 test("tool, table and CSV share the same Last checked date", function () {
   assert.ok(out.page.indexOf(JSON.stringify(D.lastChecked)) !== -1);
   assert.ok(out.table.indexOf(D.lastChecked) !== -1);

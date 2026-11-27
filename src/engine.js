@@ -246,6 +246,11 @@
     return rows;
   }
 
+  // The footer line, shared by the tool and the SEO table.
+  function footerText() {
+    return "Last checked: " + DATA.lastChecked + ". " + DATA.disclaimer;
+  }
+
   function stateToParams(state) {
     var out = {};
     STATE_KEYS.forEach(function (k) { if (state[k] !== undefined) out[k] = state[k]; });
@@ -267,6 +272,7 @@
     labelFor: labelFor,
     enumeratePaths: enumeratePaths,
     allRoutes: allRoutes,
-    stateToParams: stateToParams
+    stateToParams: stateToParams,
+    footerText: footerText
   };
 });
