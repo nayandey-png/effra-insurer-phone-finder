@@ -77,10 +77,6 @@ h1, h2, h3 { line-height: 1.25; margin: 0; }
 .ipf-logo.is-initials { background: var(--ipf-primary-soft); }
 
 /* Filter */
-.ipf-filter { display: block; margin: 0 0 14px; }
-.ipf-filter label { display: block; font-size: .9rem; color: var(--ipf-muted); margin-bottom: 4px; }
-.ipf-filter input { width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid var(--ipf-border-strong); border-radius: var(--ipf-radius); background: var(--ipf-bg); }
-.ipf-empty { color: var(--ipf-muted); padding: 12px 0; }
 
 /* Option buttons */
 .ipf-options { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
@@ -122,6 +118,7 @@ h1, h2, h3 { line-height: 1.25; margin: 0; }
 .ipf-other { padding: 12px 0; border-top: 1px solid var(--ipf-border); font-size: .92rem; }
 .ipf-other-label { margin: 0 0 2px; color: var(--ipf-muted); }
 .ipf-number-row.is-compact { margin: 0 0 8px; gap: 8px 12px; }
+.ipf-other > :last-child { margin-bottom: 0; }
 .ipf-number.is-small { font-size: 1.15rem; }
 .ipf-other .ipf-copy { min-height: 36px; padding: 4px 12px; font-size: .88rem; }
 .ipf-menu.is-compact .ipf-menu-step { background: var(--ipf-primary-soft); color: var(--ipf-primary); padding: 3px 10px; font-size: .88rem; }
@@ -166,7 +163,7 @@ a { color: var(--ipf-primary); }
   </div>
   <div id="ipf-live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
   <section id="ipf-step" aria-labelledby="ipf-heading"></section>
-  <footer class="ipf-footer" id="ipf-footer"></footer>
+  <footer class="ipf-footer" id="ipf-footer" hidden></footer>
   <noscript><p>This tool needs JavaScript. The full list of insurer numbers is in the table on this page.</p></noscript>
 </main>
 <!-- DEBUG:START -->
@@ -189,6 +186,7 @@ a { color: var(--ipf-primary); }
   var liveEl = document.getElementById("ipf-live");
   var backEl = document.getElementById("ipf-back");
   var progressEl = document.getElementById("ipf-progress");
+  var footerEl = document.getElementById("ipf-footer");
 
   // ------------------------------------------------------------ DOM helper
   function h(tag, attrs, children) {
@@ -293,42 +291,19 @@ a { color: var(--ipf-primary); }
   }
 
   function renderInsurerStep() {
-    var title = D.questions.insurer.title;
-    var count = h("p", { class: "sr-only", "aria-live": "polite" });
-    var empty = h("p", { class: "ipf-empty", hidden: true, text: "No insurers match. Try a different spelling." });
     var items = D.insurers.map(function (ins) {
-      var btn = h("button", { type: "button", class: "ipf-option", onclick: function () { go({ insurer: ins.id }); } }, [
+      return h("li", null, [h("button", { type: "button", class: "ipf-option", onclick: function () { go({ insurer: ins.id }); } }, [
         logo(ins),
         h("span", { class: "ipf-option-text" }, [
           h("span", { class: "ipf-option-label", text: ins.name }),
           ins.hint ? h("span", { class: "ipf-option-detail", text: ins.hint }) : null
         ])
-      ]);
-      return { ins: ins, li: h("li", null, [btn]), btn: btn };
-    });
-    var input = h("input", { id: "ipf-filter", type: "search", autocomplete: "off", spellcheck: "false", placeholder: "Start typing, e.g. AXA" });
-    input.addEventListener("input", function () {
-      var q = input.value.trim().toLowerCase(), shown = 0;
-      items.forEach(function (it) {
-        var match = !q || it.ins.name.toLowerCase().indexOf(q) !== -1 || it.ins.id.indexOf(q) !== -1;
-        it.li.hidden = !match; if (match) shown++;
-      });
-      empty.hidden = shown !== 0;
-      count.textContent = q ? shown + (shown === 1 ? " insurer" : " insurers") + " shown" : "";
-      postHeight();
-    });
-    input.addEventListener("keydown", function (e) {
-      if (e.key !== "Enter") return;
-      var visible = items.filter(function (it) { return !it.li.hidden; });
-      if (visible.length === 1) { e.preventDefault(); visible[0].btn.click(); }
+      ])]);
     });
     return [
-      heading(title),
+      heading(D.questions.insurer.title),
       h("p", { class: "ipf-sub", text: "Find the right number and phone-menu options for your query." }),
-      h("div", { class: "ipf-filter" }, [h("label", { for: "ipf-filter", text: "Filter insurers" }), input]),
-      count,
-      h("ul", { class: "ipf-options is-grid" }, items.map(function (it) { return it.li; })),
-      empty
+      h("ul", { class: "ipf-options is-grid" }, items)
     ];
   }
 
@@ -361,7 +336,6 @@ a { color: var(--ipf-primary); }
   }
 
   function menuBlock(menu, compact) {
-    if (!menu.length) return h("p", { text: "No phone-menu options listed. Tell the agent what you need." });
     return h("ol", { class: "ipf-menu" + (compact ? " is-compact" : ""), "aria-label": "Phone-menu steps" }, menu.map(function (m) {
       return h("li", null, [h("span", { class: "ipf-menu-step", text: m })]);
     }));
@@ -411,7 +385,7 @@ a { color: var(--ipf-primary); }
         h("a", { class: "ipf-number", href: m.tel, target: "_top", "aria-label": "Call " + m.number, text: m.number }),
         copyButton(m.number)
       ]),
-      section("Phone menu", [menuBlock(m.menu)]),
+      m.menu.length ? section("Phone menu", [menuBlock(m.menu)]) : null,
       m.hoursText ? section("Opening hours", [hoursBlock(m.line, m.hoursText)]) : null,
       r.covers ? section("This line handles", [h("p", { text: r.covers })]) : null,
       r.haveReady.length ? section("Have ready", [h("p", { text: r.haveReady.join(" · ") })]) : null,
@@ -433,7 +407,7 @@ a { color: var(--ipf-primary); }
               h("a", { class: "ipf-number is-small", href: a.tel, target: "_top", "aria-label": "Call " + a.number, text: a.number }),
               copyButton(a.number)
             ]),
-            a.menu.length ? menuBlock(a.menu, true) : h("p", { class: "ipf-note", text: "No phone-menu options listed. Tell the agent what you need." }),
+            a.menu.length ? menuBlock(a.menu, true) : null,
             a.hoursText ? h("div", { class: "ipf-other-hours" }, [hoursBlock(a.line, a.hoursText)]) : null
           ]);
         }))
@@ -476,6 +450,7 @@ a { color: var(--ipf-primary); }
     progressEl.firstElementChild.style.width = pct + "%";
     progressEl.setAttribute("aria-valuenow", String(pct));
     backEl.disabled = step.type === "insurer";
+    footerEl.hidden = step.type !== "insurer"; // "Last checked" footer: insurer list only
 
     var stepNo = done + 1;
     announce(step.type === "result"
@@ -489,7 +464,7 @@ a { color: var(--ipf-primary); }
   }
 
   // ------------------------------------------------------------ footer
-  document.getElementById("ipf-footer").textContent = "Last checked: " + D.lastChecked + " · " + D.disclaimer;
+  footerEl.textContent = "Last checked: " + D.lastChecked + " · " + D.disclaimer;
 
   // ------------------------------------------------------------ iframe height
   var lastHeight = 0;

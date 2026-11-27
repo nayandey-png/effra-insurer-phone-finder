@@ -563,10 +563,8 @@ var IPF_DATA = {
       title: "What's the invoice question?",
       shortTitle: "Invoice question",          // used in the SEO table and CSV
       options: [
-        { value: "specific", label: "A question about a specific invoice",
-          detail: "Its status, or an amount paid that needs explaining" },
-        { value: "account",  label: "Received but not paid, or I can't reconcile it",
-          detail: "Remittance queries, dropped claims, account-level payment issues" }
+        { value: "specific", label: "Check where an invoice is up to, or ask about an amount AXA paid" },
+        { value: "account",  label: "Something's gone wrong: an invoice is overdue, a remittance doesn't add up, or a claim has gone missing" }
       ]
     },
     policy: {

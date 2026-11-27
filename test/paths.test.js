@@ -314,6 +314,23 @@ test("Manrope 500/600/700 is embedded, with its licence", function () {
   assert.ok(/SIL Open Font License/.test(fs.readFileSync(path.join(__dirname, "..", "assets", "fonts", "OFL.txt"), "utf8")));
 });
 
+test("UI: no filter box, footer only on the insurer list, no empty phone-menu section", function () {
+  assert.ok(!/ipf-filter|Filter insurers|type: "search"/.test(out.page), "filter box should be gone");
+  assert.ok(/<footer class="ipf-footer" id="ipf-footer" hidden>/.test(out.page), "footer hidden by default");
+  assert.ok(/footerEl\.hidden = step\.type !== "insurer"/.test(out.page), "footer shown only on the insurer step");
+  assert.ok(!/No phone-menu options listed|Tell the agent what you need/.test(out.page));
+  assert.ok(/m\.menu\.length \? section\("Phone menu"/.test(out.page), "Phone menu section only when options exist");
+});
+
+test("AXA invoice follow-up uses plain-language labels", function () {
+  var step = E.getStep({ insurer: "axa", query: "invoice" });
+  assert.equal(step.id, "invoiceType");
+  assert.deepEqual(step.options.map(function (o) { return o.label; }), [
+    "Check where an invoice is up to, or ask about an amount AXA paid",
+    "Something's gone wrong: an invoice is overdue, a remittance doesn't add up, or a claim has gone missing"
+  ]);
+});
+
 test("built page is self-contained and has no debug view", function () {
   var page = out.page;
   assert.ok(!/DEBUG:|ipf-debug|debugView/.test(page), "debug code leaked into build");
